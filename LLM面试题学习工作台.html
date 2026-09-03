@@ -1,0 +1,1533 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 面试题学习工作台</title>
+<style>
+:root{
+  --bg:#F6F3EC; --surface:#FFFDF8; --surface2:#F1ECE2; --ink:#1B1A17; --ink-2:#4E4A41;
+  --muted:#6E675A; --line:#E3DCCD; --line-strong:#CFC6B2;
+  --accent:#C2410C; --accent-soft:#FBE7DA; --accent-ink:#8A2E08; --on-accent:#FFFFFF;
+  --ok:#2F6B4F; --ok-soft:#E1EFE7; --on-ok:#FFFFFF;
+  --warn:#8A5A10; --warn-soft:#F6EBD3; --on-warn:#FFFFFF;
+  --shadow:0 10px 28px -16px rgba(44,34,20,.30);
+  --serif:Georgia,"Songti SC","STSong","SimSun",serif;
+  --sans:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei UI","Noto Sans SC",sans-serif;
+  --mono:"SF Mono",Consolas,"Cascadia Mono",monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#161512; --surface:#1E1C18; --surface2:#27241F; --ink:#EDE9DF; --ink-2:#BCB5A6;
+    --muted:#948B7D; --line:#2E2A23; --line-strong:#40392E;
+    --accent:#E8622C; --accent-soft:#3A2317; --accent-ink:#FFB08A; --on-accent:#211308;
+    --ok:#5FAE87; --ok-soft:#1C2E25; --on-ok:#161512;
+    --warn:#D9A43F; --warn-soft:#33280F; --on-warn:#161512;
+    --shadow:0 10px 28px -16px rgba(0,0,0,.55);
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:auto}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
+input{font-family:inherit;color:inherit;caret-color:var(--accent)}
+::selection{background:var(--accent);color:var(--on-accent)}
+html{scrollbar-color:var(--line-strong) transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:99px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h2,h3{text-wrap:balance}
+
+.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40;display:none}
+/* ---------- sidebar ---------- */
+.sidebar{background:var(--surface);border-right:1px solid var(--line);padding:28px 18px 20px;position:sticky;top:0;height:100vh;overflow:hidden;display:flex;flex-direction:column;gap:8px}
+.brand{padding:0 10px 18px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.brand h1{font-family:var(--serif);font-size:21px;letter-spacing:.5px;font-weight:700}
+.brand h1 em{font-style:normal;color:var(--accent)}
+.brand .sub{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:.03em}
+.nav{display:flex;flex-direction:column;gap:2px;overflow-y:auto;min-height:0;flex:1}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;text-decoration:none;color:var(--ink-2);font-size:14px;transition:background .15s,color .15s;min-height:38px}
+.nav a:hover{background:var(--surface2);color:var(--ink)}
+.nav a.active{background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.nav a .idx{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:22px;font-variant-numeric:tabular-nums}
+.nav a.active .idx{color:var(--accent)}
+.nav a .pct{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.nav a.active .pct{color:var(--accent)}
+.side-foot{margin-top:auto;padding:14px 10px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.pp{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px 12px 10px}
+.pp-head{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;margin-bottom:8px;gap:8px}
+.pp-head .save-info{font-size:12px;color:var(--muted);font-weight:400}
+.pp-bar{background:var(--bg);height:5px;border-radius:99px;overflow:hidden}
+.pp-fill{height:100%;width:100%;background:var(--ok);border-radius:99px;transform-origin:left center;transform:scaleX(0);transition:transform .4s cubic-bezier(.22,.8,.3,1)}
+.pp-nums{display:flex;gap:12px;margin-top:8px;font-size:12px;color:var(--muted)}
+.pp-nums b{color:var(--ink-2);font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums}
+.side-foot .hint{font-size:12px;color:var(--muted);line-height:1.55}
+.side-foot .btns{display:flex;gap:6px;flex-wrap:wrap}
+.side-foot button{font-size:12.5px;padding:8px 11px;border:1px solid var(--line-strong);border-radius:8px;color:var(--ink-2);transition:border-color .15s,color .15s;background:var(--surface);display:inline-flex;align-items:center;gap:6px;min-height:36px}
+.side-foot button:hover{border-color:var(--accent);color:var(--accent)}
+.side-foot button .icon{width:13px;height:13px;flex-shrink:0}
+.menu-btn{display:none}
+
+/* ---------- main ---------- */
+.main{padding:34px 42px 64px;max-width:980px;width:100%}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:26px;flex-wrap:wrap}
+.crumb{font-size:13px;color:var(--muted)}
+.crumb button{color:var(--accent);font-weight:600;font-size:13px;padding:0}
+.crumb button:hover{text-decoration:underline}
+.crumb b{color:var(--ink-2);font-weight:600}
+.topbar .grow{flex:1}
+.searchbox{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;padding:8px 14px;min-width:230px;transition:border-color .15s}
+.searchbox:focus-within{border-color:var(--accent)}
+.searchbox input{border:none;background:none;outline:none;font-size:13.5px;width:100%;min-height:24px}
+.searchbox kbd{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+/* ---------- dashboard ---------- */
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px 28px;margin-bottom:26px}
+.hero h2{font-family:var(--serif);font-size:27px;font-weight:700;letter-spacing:.3px;margin-bottom:8px}
+.hero p{color:var(--ink-2);font-size:14px;max-width:640px;overflow-wrap:anywhere}
+.hero .stats{display:flex;gap:34px;margin-top:20px;flex-wrap:wrap}
+.hero .stat .num{font-family:var(--mono);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}
+.hero .stat .num small{font-size:15px;color:var(--muted);font-weight:400}
+.hero .stat .lbl{font-size:12.5px;color:var(--muted);margin-top:2px}
+.hero .stat.ok .num{color:var(--ok)}
+.hero .stat.warn .num{color:var(--warn)}
+.hero .barwrap{margin-top:20px;background:var(--surface2);border-radius:99px;height:6px;overflow:hidden}
+.hero .bar{height:100%;width:100%;background:var(--accent);border-radius:99px;transform-origin:left center;transform:scaleX(0);transition:transform .5s cubic-bezier(.22,.8,.3,1)}
+
+.today{background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;padding:20px 24px;margin-bottom:26px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.today .tag{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:700}
+.today .q{flex:1;font-size:15px;font-weight:600;color:var(--accent-ink);min-width:200px;overflow-wrap:anywhere}
+.today button{background:var(--accent);color:var(--on-accent);font-size:13px;font-weight:600;padding:9px 18px;border-radius:9px;transition:opacity .15s}
+.today button:hover{opacity:.85}
+
+.section-title{display:flex;align-items:baseline;gap:10px;margin:30px 0 14px}
+.section-title h3{font-family:var(--serif);font-size:18px;font-weight:700}
+.section-title .note{font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.tcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s;display:flex;flex-direction:column;gap:12px;text-align:left}
+.tcard:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+.tcard .t-title{font-size:15.5px;font-weight:700;letter-spacing:.2px;overflow-wrap:anywhere}
+.tcard .t-title small{display:block;font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:400;letter-spacing:.02em;margin-top:4px;font-variant-numeric:tabular-nums}
+.tcard .t-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.tcard .t-meta b{color:var(--ink-2);font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums}
+.tcard .barwrap{background:var(--surface2);height:4px;border-radius:99px;overflow:hidden}
+.tcard .bar{height:100%;width:100%;background:var(--ok);border-radius:99px;transform-origin:left center;transform:scaleX(0);transition:transform .5s cubic-bezier(.22,.8,.3,1)}
+.tcard .go{align-self:flex-end;font-size:12.5px;color:var(--accent);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.tcard .go .icon,.today button .icon,.chips button .icon{width:14px;height:14px;flex-shrink:0}
+.today button{display:inline-flex;align-items:center;gap:7px}
+.chips button{display:inline-flex;align-items:center;gap:6px}
+
+/* ---------- topic view ---------- */
+.thead{margin-bottom:22px}
+.thead h2{font-family:var(--serif);font-size:26px;font-weight:700;letter-spacing:.3px}
+.thead .meta{display:flex;gap:14px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.pill{font-size:12.5px;padding:4px 10px;border-radius:99px;border:1px solid var(--line-strong);color:var(--ink-2)}
+.pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.pill.acc{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.modebar{display:flex;gap:8px;align-items:center;margin:14px 0 20px;flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--surface2);border-radius:10px;padding:3px;border:1px solid var(--line)}
+.seg button{font-size:13px;padding:6px 14px;border-radius:8px;color:var(--ink-2);transition:background .15s,color .15s}
+.seg button.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg button.acc-on{background:var(--accent);color:var(--on-accent);font-weight:600}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.chips button{font-size:13px;padding:5px 12px;border-radius:99px;border:1px solid var(--line-strong);color:var(--ink-2);transition:background .15s,color .15s;background:var(--surface)}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips button.on:hover{background:var(--ink);color:var(--bg)}
+
+.qa-list{display:flex;flex-direction:column;gap:12px}
+.sec-div{display:flex;align-items:center;gap:12px;margin:18px 0 2px}
+.sec-div::after{content:"";flex:1;height:1px;background:var(--line-strong)}
+.sec-div span{font-family:var(--serif);font-size:14.5px;font-weight:700;color:var(--ink-2);letter-spacing:.5px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:13px;overflow:hidden;transition:border-color .15s}
+.card:hover{border-color:var(--line-strong)}
+.card .qrow{display:flex;gap:14px;padding:16px 18px;align-items:flex-start;width:100%;text-align:left;font:inherit;color:inherit;background:none;border:none;border-radius:13px}
+.card .num{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:3px;min-width:26px;font-variant-numeric:tabular-nums}
+.card .qtext{flex:1;font-size:15.5px;font-weight:600;letter-spacing:.2px;overflow-wrap:anywhere}
+.card .status-dot{width:9px;height:9px;border-radius:50%;background:var(--line-strong);margin-top:8px;flex-shrink:0}
+.card.st-mastered .status-dot{background:var(--ok)}
+.card.st-review .status-dot{background:var(--warn)}
+.card .a{display:none;padding:0 18px 18px 58px;color:var(--ink-2);font-size:14.5px;line-height:1.85;white-space:pre-wrap;overflow-wrap:anywhere;max-width:76ch}
+.card.open .a{display:block}
+.card.open{border-color:var(--accent)}
+.card .a .hint{color:var(--muted);font-style:normal}
+.card .afoot{display:none;gap:8px;padding:0 18px 16px 58px;flex-wrap:wrap;align-items:center}
+.card.open .afoot{display:flex}
+.afoot button{font-size:13px;padding:6px 13px;border-radius:99px;border:1px solid var(--line-strong);color:var(--ink-2);transition:border-color .15s,color .15s;background:var(--surface);display:inline-flex;align-items:center;gap:6px}
+.afoot button:hover{border-color:var(--accent);color:var(--accent)}
+.afoot button.on-ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.afoot button.on-warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.afoot .icon{width:14px;height:14px;flex-shrink:0}
+.card.quizmode .a{display:none}
+.card.quizmode.revealed .a{display:block}
+.card.quizmode .afoot{display:none}
+.card.quizmode.revealed .afoot{display:flex}
+
+/* ---------- quiz ---------- */
+.quiz-stage{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:30px 30px 26px;max-width:720px;margin:0 auto}
+.quiz-stage .q-big{font-size:19px;font-weight:700;line-height:1.65;margin:16px 0 6px;letter-spacing:.3px;overflow-wrap:anywhere}
+.quiz-stage .q-topic{font-size:12px;letter-spacing:.14em;color:var(--accent);font-weight:700}
+.quiz-stage .a-big{display:none;margin-top:18px;padding:16px 18px;background:var(--surface2);border-radius:10px;font-size:14.5px;line-height:1.85;color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere}
+.quiz-stage.revealed .a-big{display:block}
+.quiz-actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.quiz-actions button{font-size:14px;font-weight:600;padding:10px 20px;border-radius:10px;border:1px solid var(--line-strong);transition:opacity .15s,border-color .15s,color .15s;background:var(--surface);display:inline-flex;align-items:center;gap:7px}
+.quiz-actions .primary{background:var(--accent);color:var(--on-accent);border-color:transparent}
+.quiz-actions .primary:hover{opacity:.85}
+.quiz-actions .ghost:hover{border-color:var(--accent);color:var(--accent)}
+.quiz-actions .okbtn{background:var(--ok);color:var(--on-ok);border-color:transparent}
+.quiz-actions .okbtn .icon,.quiz-actions .nobtn .icon{width:15px;height:15px}
+.quiz-actions .nobtn{background:var(--warn);color:var(--on-warn);border-color:transparent}
+
+/* ---------- search ---------- */
+.res-group{margin-bottom:22px}
+.res-group .g-title{font-size:13px;color:var(--muted);margin-bottom:8px;display:flex;gap:8px;align-items:baseline}
+.res-group .g-title b{color:var(--ink);font-size:14px}
+.hl{background:var(--warn-soft);border-radius:3px;padding:0 2px;color:inherit}
+
+.empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.empty .big{font-family:var(--serif);font-size:20px;color:var(--ink-2);margin-bottom:6px}
+
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);font-size:13.5px;padding:10px 20px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:99;max-width:min(90vw,520px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (prefers-reduced-motion: reduce){
+  .tcard,.toast,.hero .bar,.tcard .bar,.pp-fill{transition:none}
+  .tcard:hover{transform:none}
+  html{scroll-behavior:auto}
+}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:270px;z-index:50;transform:translateX(-100%);transition:transform .25s;box-shadow:none}
+  .sidebar.open{transform:translateX(0);box-shadow:0 0 60px rgba(0,0,0,.35)}
+  .menu-btn{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;padding:10px 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface)}
+  .menu-btn .icon{width:15px;height:15px}
+  .main{padding:22px 18px 60px}
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40;display:none}
+  .scrim.show{display:block}
+  .nav a{min-height:46px;padding:10px 10px}
+  .chips button{padding:9px 15px}
+  .afoot button{padding:9px 15px}
+  .seg button{padding:8px 16px}
+  .side-foot button{padding:12px 13px}
+  .searchbox{min-width:0;flex:1}
+  .today button{padding:10px 18px}
+  .quiz-actions button{padding:11px 18px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="scrim" id="scrim" onclick="closeNav()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <h1>面试题<em>工作台</em></h1>
+      <div class="sub">12 个主题 · 115 道题 · 完全离线</div>
+    </div>
+    <nav class="nav" id="nav" aria-label="主题目录"></nav>
+    <div class="side-foot">
+      <div class="pp" aria-label="学习进度总览">
+        <div class="pp-head"><span>学习进度</span><span class="save-info" id="saveInfo" aria-live="polite">尚未保存</span></div>
+        <div class="pp-bar"><div class="pp-fill" id="ppBar"></div></div>
+        <div class="pp-nums"><span>掌握 <b id="ppOk">0</b></span><span>需复习 <b id="ppRev">0</b></span><span>未学 <b id="ppNew">0</b></span></div>
+      </div>
+      <div class="hint">进度自动保存在本机浏览器。换设备前请先「导出进度」，在新设备上「导入进度」。</div>
+      <div class="btns">
+        <button onclick="exportProgress()"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v8M4.5 7.5L8 11l3.5-3.5"/><path d="M2.5 11.5v1.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-1.5"/></svg>导出进度</button>
+        <button onclick="document.getElementById('importFile').click()"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 11V3M4.5 5.5L8 2l3.5 3.5"/><path d="M2.5 11.5v1.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-1.5"/></svg>导入进度</button>
+        <button onclick="resetProgress()"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>重置</button>
+        <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importProgress(event)">
+      </div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <button class="menu-btn" onclick="toggleNav()" aria-label="打开主题目录"><svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>目录</button>
+      <div class="crumb" id="crumb"><button onclick="goDashboard()">总览</button></div>
+      <div class="grow"></div>
+      <div class="searchbox">
+        <input id="searchInput" type="text" placeholder="搜索题目或答案…" aria-label="搜索题目或答案" oninput="onSearchInput(this.value)">
+        <kbd>/</kbd>
+      </div>
+    </div>
+    <div id="view"></div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+const DATA = [
+ {
+  "topic": "Attention 进阶",
+  "source": "Attention 进阶面试题",
+  "items": [
+   {
+    "type": "qa",
+    "q": "1 传统 Attention 存在哪些问题？",
+    "a": "1.传统 Attention 存在 上下文长度 约束问题；\n2.传统 Attention 速度慢，内存占用大；"
+   },
+   {
+    "type": "qa",
+    "q": "2 Attention 优化方向",
+    "a": "1.提升上下文长度\n2.加速、减少内存占用"
+   },
+   {
+    "type": "qa",
+    "q": "3 Attention 变体有哪些？",
+    "a": "稀疏 attention。将稀疏偏差引入 attention 机制可以降低了复杂性；\n线性化 attention。解开 attention 矩阵与内核特征图，然后以相反的顺序计算 attention 以实现线性复杂度；\n原型和内存压缩。这类方法减少了查询或键值记忆对的数量，以减少注意力矩阵的大小；\n低阶 self-Attention。这一系列工作捕获了 self-Attention 的低阶属性；\nAttention 与先验。该研究探索了用先验 attention 分布来补充或替代标准 attention；\n改进多头机制。该系列研究探索了不同的替代多头机制。"
+   },
+   {
+    "type": "section",
+    "q": "4 Multi-Query Attention 篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "4.1 Multi-head Attention 存在什么问题？",
+    "a": "训练过程：不会显著影响训练过程，训练速度不变，会引起非常细微的模型效果损失；\n推理过程：反复加载 巨大 的 KV cache , 导致 内存开销大，性能是内存受限；"
+   },
+   {
+    "type": "qa",
+    "q": "4.2 介绍一下 Multi-Query Attention？",
+    "a": "Multi-Query Attention 在所有注意力头上 共享 key 和 value."
+   },
+   {
+    "type": "qa",
+    "q": "4.3 对比一下 Multi-head Attention 和 Multi-Query Attention？",
+    "a": "Multi-head Attention：每个注意力头都有各自的query、key和value。\nMulti-query Attention: 在所有的注意力头上共享key和value。\nFalcon、PaLM、ChatGLM2-6B都使用了Multi-query Attention，但有细微差别。\n为了保持参数量一致，\nFalcon: 把隐藏维度从4096增大到了4544。多余的参数量分给了Attention块和FFN块\nChatGLM2: 把FFN中间维度从11008增大到了13696。多余的参数分给了FFN块"
+   },
+   {
+    "type": "qa",
+    "q": "4.4 Multi-Query Attention 这样做的好处是什么？",
+    "a": "减少 KV cache 的大小，减少显存占用，提升推理速度。"
+   },
+   {
+    "type": "qa",
+    "q": "4.5 有 哪些模型 是 使用 Multi-Query Attention？",
+    "a": "代表模型：PaLM、ChatGLM2、Falcon等"
+   },
+   {
+    "type": "section",
+    "q": "5 Grouped-query Attention",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "5.1 什么是 Grouped-query Attention？",
+    "a": "Grouped query attention: 介于multi head和multi query之间，多个key和value。"
+   },
+   {
+    "type": "qa",
+    "q": "5.2 有哪些大模型使用 Grouped-query Attention？",
+    "a": "ChatGLM2，LLaMA2-34B/70B使用了Grouped query attention。"
+   },
+   {
+    "type": "qa",
+    "q": "6 FlashAttention",
+    "a": "核心：用分块softmax等价替代传统softmax\n优点：节约HBM，高效利用SRAM，省显存，提速度\n代表模型：Meta推出的开源大模型LLaMA，阿联酋推出的开源大模型Falcon都使用了Flash Attention来加速\n计算和节省显存\n关键词：HBM、SRAM、分块Softmax、重计算、Kernel融合。"
+   },
+   {
+    "type": "qa",
+    "q": "7 并行 transformer block",
+    "a": "用并行公式替换了串行，提升了15%的训练速度。\n在8B参数量规模，会有轻微的模型效果损失;在62B参数量规模，就不会损失模型效果。\nFalcon、PaLM都使用了该技术来加速训练"
+   }
+  ]
+ },
+ {
+  "topic": "激活函数",
+  "source": "大模型激活函数面试题",
+  "items": [
+   {
+    "type": "qa",
+    "q": "1 介绍一下 FFN 块 计算公式？",
+    "a": "2个可训练权重矩阵，中间维度为 4h"
+   },
+   {
+    "type": "qa",
+    "q": "2 介绍一下 GeLU 计算公式？",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "3 介绍一下 Swish 计算公式？",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "4 介绍一下 使用 GLU 线性门控单元的 FFN 块 计算公式？",
+    "a": "3个可训练权重矩阵，中间维度为 4h*2/3"
+   },
+   {
+    "type": "qa",
+    "q": "5 介绍一下 使用 GeLU 的 GLU 块 计算公式？",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "6 介绍一下 使用 Swish 的 GLU 块 计算公式？",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "各LLMs 都使用哪种激活函数？",
+    "a": "4h = 4*4096 = 16384\n2/3 * 4h = 10022 -> 11008\n11008/128 = 86"
+   }
+  ]
+ },
+ {
+  "topic": "损失函数",
+  "source": "大模型损失函数面试题",
+  "items": [
+   {
+    "type": "qa",
+    "q": "一、介绍一下 KL 散度？",
+    "a": "KL（Kullback-Leibler）散度衡量了两个概率分布之间的差异。其公式为："
+   },
+   {
+    "type": "qa",
+    "q": "二、交叉熵损失函数写一下，物理意义是什么？",
+    "a": "交叉熵损失函数（Cross-Entropy Loss Function）是用于度量两个概率分布之间的差异的一种损失函数。在分类\n问题中，它通常用于衡量模型的预测分布与实际标签分布之间的差异。\n注：其中，p 表示真实标签，q 表示模型预测的标签，N 表示样本数量。该公式可以看作是一个\n基于概率分布的比较方式，即将真实标签看做一个概率分布，将模型预测的标签也看做一个概率\n分布，然后计算它们之间的交叉熵。\n物理意义：交叉熵损失函数可以用来衡量实际标签分布与模型预测分布之间的“信息差”。当两个\n分布完全一致时，交叉熵损失为0，表示模型的预测与实际情况完全吻合。当两个分布之间存在\n差异时，损失函数的值会增加，表示预测错误程度的大小。"
+   },
+   {
+    "type": "qa",
+    "q": "三、KL 散度与交叉熵的区别？",
+    "a": "KL散度指的是相对熵，KL散度是两个概率分布P和Q差别的非对称性的度量。KL散度越小表示两个分布越接近。\n也就是说KL散度是不对称的，且KL散度的值是非负数。（也就是熵和交叉熵的差）\n交叉熵损失函数是二分类问题中最常用的损失函数，由于其定义出于信息学的角度，可以泛化到多分类问题\n中。\nKL散度是一种用于衡量两个分布之间差异的指标，交叉熵损失函数是KL散度的一种特殊形式。在二分类问题\n中，交叉熵函数只有一项，而在多分类问题中有多项。"
+   },
+   {
+    "type": "qa",
+    "q": "四、多任务学习各loss差异过大怎样处理？",
+    "a": "多任务学习中，如果各任务的损失差异过大，可以通过动态调整损失权重、使用任务特定的损失函数、改变模型\n架构或引入正则化等方法来处理。目标是平衡各任务的贡献，以便更好地训练模型。"
+   },
+   {
+    "type": "qa",
+    "q": "五、分类问题为什么用交叉熵损失函数不用均方误差（MSE）？",
+    "a": "交叉熵损失函数通常在分类问题中使用，而均方误差（MSE）损失函数通常用于回归问题。这是因为分类问题和\n回归问题具有不同的特点和需求。\n分类问题的目标是将输入样本分到不同的类别中，输出为类别的概率分布。交叉熵损失函数可以度量两个概率分\n布之间的差异，使得模型更好地拟合真实的类别分布。它对概率的细微差异更敏感，可以更好地区分不同的类\n别。此外，交叉熵损失函数在梯度计算时具有较好的数学性质，有助于更稳定地进行模型优化。\n相比之下，均方误差（MSE）损失函数更适用于回归问题，其中目标是预测连续数值而不是类别。MSE损失函\n数度量预测值与真实值之间的差异的平方，适用于连续数值的回归问题。在分类问题中使用MSE损失函数可能不\n太合适，因为它对概率的微小差异不够敏感，而且在分类问题中通常需要使用激活函数（如sigmoid或softmax）\n将输出映射到概率空间，使得MSE的数学性质不再适用。\n综上所述，交叉熵损失函数更适合分类问题，而MSE损失函数更适合回归问题。"
+   },
+   {
+    "type": "qa",
+    "q": "六、什么是信息增益？",
+    "a": "信息增益是在决策树算法中用于选择最佳特征的一种评价指标。在决策树的生成过程中，选择最佳特征来进行节\n点的分裂是关键步骤之一，信息增益可以帮助确定最佳特征。\n信息增益衡量了在特征已知的情况下，将样本集合划分成不同类别的纯度提升程度。它基于信息论的概念，使用\n熵来度量样本集合的不确定性。具体而言，信息增益是原始集合的熵与特定特征下的条件熵之间的差异。\n在决策树的生成过程中，选择具有最大信息增益的特征作为当前节点的分裂标准，可以将样本划分为更加纯净的\n子节点。信息增益越大，意味着使用该特征进行划分可以更好地减少样本集合的不确定性，提高分类的准确性。"
+   },
+   {
+    "type": "qa",
+    "q": "七、多分类的分类损失函数(Softmax)？",
+    "a": "多分类的分类损失函数采用Softmax交叉熵（Softmax Cross Entropy）损失函数。Softmax函数可以将输出值归\n一化为概率分布，用于多分类问题的输出层。Softmax交叉熵损失函数可以写成：\n注：其中，n是类别数，yi是第i类的真实标签，pi是第i类的预测概率。"
+   },
+   {
+    "type": "qa",
+    "q": "八、softmax和交叉熵损失怎么计算，二值交叉熵呢？",
+    "a": "softmax计算公式如下：\n多分类交叉熵：\n二分类交叉熵："
+   },
+   {
+    "type": "qa",
+    "q": "九、如果softmax的e次方超过float的值了怎么办？",
+    "a": "将分子分母同时除以 x 中的最大值，可以解决。"
+   }
+  ]
+ },
+ {
+  "topic": "层归一化",
+  "source": "深度学习层归一化面试题",
+  "items": [
+   {
+    "type": "section",
+    "q": "Layer normalization-方法篇",
+    "a": ""
+   },
+   {
+    "type": "section",
+    "q": "一、Layer Norm 篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "1.1 Layer Norm 的计算公式写一下？",
+    "a": ""
+   },
+   {
+    "type": "section",
+    "q": "二、RMS Norm 篇 （均方根 Norm）",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "2.1 RMS Norm 的计算公式写一下？",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "2.2 RMS Norm 相比于 Layer Norm 有什么特点？",
+    "a": "RMS Norm 简化了 Layer Norm ，去除掉计算均值进行平移的部分。\n对比LN，RMS Norm的计算速度更快。效果基本相当，甚至略有提升。"
+   },
+   {
+    "type": "section",
+    "q": "三、Deep Norm 篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "3.1 Deep Norm 思路？",
+    "a": "Deep Norm方法在执行Layer Norm之前，up-scale了残差连接 (alpha>1)；另外，在初始化阶段down-scale了模\n型参数(beta<1)。"
+   },
+   {
+    "type": "qa",
+    "q": "3.2 写一下 Deep Norm 代码实现？",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "Deep Norm 有什么优点？",
+    "a": "Deep Norm可以缓解爆炸式模型更新的问题，把模型更新限制在常数，使得模型训练过程更稳定。"
+   },
+   {
+    "type": "section",
+    "q": "Layer normalization-位置篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "1 LN 在 LLMs 中的不同位置 有什么区别么？如果有，能介绍一下区别么？",
+    "a": "回答：有，LN 在 LLMs 位置有以下几种：\n1.Post LN：\na.位置：layer norm在残差链接之后\nb.缺点：Post LN 在深层的梯度范式逐渐增大，导致使用post-LN的深层transformer容易出现训练不稳\n定的问题\n2.Pre-LN：\na.位置：layer norm在残差链接中\nb.优点：相比于Post-LN，Pre LN 在深层的梯度范式近似相等，所以使用Pre-LN的深层transformer训\n练更稳定，可以缓解训练不稳定问题\nc.缺点：相比于Post-LN，Pre-LN的模型效果略差\n3.Sandwich-LN：\na.位置：在pre-LN的基础上，额外插入了一个layer norm\nb.优点：Cogview用来避免值爆炸的问题\nc.缺点：训练不稳定，可能会导致训练崩溃。"
+   },
+   {
+    "type": "section",
+    "q": "Layer normalization 对比篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "LLMs 各模型分别用了 哪种 Layer normalization？",
+    "a": "BLOOM在embedding层后添加layer normalization，有利于提升训练稳定性:但可能会带来很大的性能损失"
+   }
+  ]
+ },
+ {
+  "topic": "对比学习相似度",
+  "source": "对比学习相似度函数面试题",
+  "items": [
+   {
+    "type": "qa",
+    "q": "一、除了cosin还有哪些算相似度的方法",
+    "a": "除了余弦相似度（cosine similarity）之外，常见的相似度计算方法还包括欧氏距离、曼哈顿距离、\nJaccard相似度、皮尔逊相关系数等。"
+   },
+   {
+    "type": "qa",
+    "q": "二、了解对比学习嘛？",
+    "a": "对比学习是一种无监督学习方法，通过训练模型使得相同样本的表示更接近，不同样本的表示更远\n离，从而学习到更好的表示。对比学习通常使用对比损失函数，例如Siamese网络、Triplet网络\n等，用于学习数据之间的相似性和差异性。"
+   },
+   {
+    "type": "qa",
+    "q": "三、对比学习负样本是否重要？负样本构造成本过高应该怎么解决？",
+    "a": "对比学习中负样本的重要性取决于具体的任务和数据。负样本可以帮助模型学习到样本之间的区分\n度，从而提高模型的性能和泛化能力。然而，负样本的构造成本可能会较高，特别是在一些领域和\n任务中。\n为了解决负样本构造成本过高的问题，可以考虑以下方法：\n降低负样本的构造成本：通过设计更高效的负样本生成算法或采样策略，减少负样本的构造成\n本。例如，可以利用数据增强技术生成合成的负样本，或者使用近似采样方法选择与正样本相\n似但不相同的负样本。\n确定关键负样本：根据具体任务的特点，可以重点关注一些关键的负样本，而不是对所有负样\n本进行详细的构造。这样可以降低构造成本，同时仍然能够有效训练模型。\n迁移学习和预训练模型：利用预训练模型或迁移学习的方法，可以在其他领域或任务中利用已\n有的负样本构造成果，减少重复的负样本构造工作。"
+   }
+  ]
+ },
+ {
+  "topic": "负样本挖掘",
+  "source": "大模型负样本样本挖掘面试题",
+  "items": [
+   {
+    "type": "qa",
+    "q": "一、为什么需要构建负难样本？",
+    "a": "在各类检索任务中，为训练好一个高质量的检索模型，往往需要从大量的候选样本集合中采样高质\n量的负例，配合正例一起进行训练。"
+   },
+   {
+    "type": "section",
+    "q": "二、负难样本构建方法篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "2.1 随机采样策略（Random Sampling）方法",
+    "a": "方法：直接基于一均匀分布从所有的候选Document中随机抽取Document作为负例；\n存在问题：由于无法保证采样得到的负例的质量，故经常会采样得到过于简单的负例，其不仅\n无法给模型带来有用信息，还可能导致模型过拟合，进而无法区分某些较难的负例样本\n分析随机采样策略（Random Sampling）方法挖掘负例训练时对梯度的影响：\n对于随机采样方法，由于其采样得到的负例往往过于简单，其会导致该分数接近于零\n进而导致其生成的梯度均值也接近于零，\n这样过于小的梯度均值会导致模型不易于收敛。"
+   },
+   {
+    "type": "qa",
+    "q": "2.2 Top-K负例采样策略（Top-K Hard Negative Sampling）方法",
+    "a": "方法：基于一稠密检索模型对所有候选Document与Query计算匹配分数，然后直接选择其中\nTop-K的候选Document作为负例；\n优点：可以保证采样得到的负例是模型未能较好区分的较难负例；\n存在问题：很可能将潜在的正例也误判为负例，即假负例（False Negative）。如果训练模型\n去将该部分假负例与正例区分开来，反而会导致模型无法准确衡量Query-Document的语义相似\n度。\n分析 Top-K负例采样策略（Top-K Hard Negative Sampling）方法 挖掘负例训练时对梯度的影\n响：\n由于其很容易采样得到语义与正例一致的假负例，其会导致正负样本的右项 值相似，\n但是左项符号相反，这样会导致计算得到的梯度方差很大，同样导致模型训练不稳定。"
+   },
+   {
+    "type": "qa",
+    "q": "2.3 困惑负样本采样方法SimANS 方法",
+    "a": "动机：在所有负例候选中，与Query的语义相似度接近于正例的负例可以同时具有较大的梯度\n均值和较小的梯度方差，是更加高质量的困惑负样本\n方法：对与正例语义相似度接近的困惑负例样本进行采样\n采样方法特点：\n与Query无关的Document应被赋予较低的相关分数，因其可提供的信息量不足；\n与Query很可能相关的Document应被赋予较低的相关分数，因其可能是假负例；\n与正例语义相似度接近的Document应该被赋予较高的相关分数，因其既需要被学习，同\n时是假负例的概率相对较低。\n困惑样本采样分布\n通过以上分析可得，在该采样分布中，随着Query与候选Document相关分数 s(q,di) 和与正例的相\n关分数 s(q, d+) 的差值的缩小，该候选Document被采样作为负例的概率应该逐渐增大，故可将该\n差值作为输入，配合任意一单调递减函数 f(·) 即可实现（如 e−x）。故可设计采样分布如下所示：\n其中为控制该分布密度的超参数，b 为控制该分布极值点的超参数， 是一随机采样的正\n例样本，D- 是Top-K的负例。通过调节 K 的大小，我们可以控制该采样分布的计算开销。以下为\n该采样方法具体实现的伪代码："
+   },
+   {
+    "type": "qa",
+    "q": "2.4 利用 对比学习微调 方式构建负例方法",
+    "a": "对比学习是优化向量化模型的常用训练方法:\n目的：优化向量化模型，使其向量化后的文本，相似的在向量空间距离近，不相似的在向量空\n间距离远。文档召回场景下，做对比学习（有监督）需要三元组（问题，文档正例，文档负\n例）。文档正例是和问题密切相关的文档片段，文档负例是和问题不相关的文档片段，可以是\n精挑细选的，也可以是随机出来的。\n构建方法：如果是随机出来的话，完全可以用同一个batch里，其他问题的文档正例当作某一\n个问题的文档负例，如果想要效果好，还需要有比较大的batch size。损失函数是基于批内负\n样本的交叉熵损失，如下公式所示,q、d分别表示问题和文档正例对应的向量，r 为温度系\n数,sim函数可以是cos相似度或者点积。\n论文：SimCSE: Simple Contrastive Learning of Sentence Embeddings\n实现方法：\n分别将B1个问题，和B2个文档片段通过向量化模型变成向量形式，然后通过矩阵乘积计算每个问\n题和文档的相似度，最后通过交叉熵损失进行优化。如果文档负例仅来自于同一个batch的其他样\n本的文档正例，那么B1=B2；如果人工的给每个样本陪k个文档负例（比如可以通过难例挖掘得\n到），那么B2 =(k+1)*B1。\nq_reps = self.encode(query) # 问题矩阵 维度(B1, d)\nd_reps = self.encode(doc) # 文档矩阵 维度(B2, d)\nscore = torch.matmul(q_reps, d_reps.transpose(0, 1)) #计算相似度矩阵 维度:(B1,\nB2)\nscores = scores / self.temperature\ntarget = torch.arange(scores.size(0), device=scores.device, dtype=torch.long)\n## 得交叉熵损失函数的标签\n# 考虑文档负例不仅来自于batch内其他样本的文档正例，也可能人工的给每个样本构造一\n些文档负例。\ntarget = target * (p_reps.size(0) // d_reps.size(0))\nloss = cross_entropy(scores, target) //交叉熵损失函数\n注：bge2论文里，做基于批内负样本的对比学习时同时考虑了多任务问题。之前也介绍了，不同\n任务加的prompt是不同的，如果把不同任务的样本放到一个batch里，模型训练时候就容易出现\n偷懒的情况，有时候会根据pormpt的内容来区分正负例，降低任务难度，这是不利于对比学习效\n果的。因此，可以通过人为的规定，同一个batch里，只能出现同一种任务的样本缓解这个问\n题。（实际应用场景下，如果任务类别不是非常多的话，最好还是一个任务训练一个模型，毕竟\n向量化模型也不大，效果会好一些）"
+   },
+   {
+    "type": "qa",
+    "q": "2.5 基于批内负采样的对比学习方法",
+    "a": "本质：随机选取文档负例，如果能有针对性的，找到和文档正例比较像的文档负例（模型更难\n区分这些文档负例），加到训练里，是有助于提高对比学习效果的。就好比我们只有不断的做\n难题才能更好的提高考试水平。\n论文方法：在文档向量空间找到和文档正例最相近的文档片段当作文档负例，训练向量化模\n型。模型更新一段时间后，刷新文档向量，寻找新的文档负例，继续训练模型。\n参考论文：\n【1】Approximate nearest neighbor negative contrastive learning for dense text retrieval\n【2】Contrastive learning with hard negative samples\n【3】Hard negative mixing for contrastive learning\n【4】Optimizing dense retrieval model training with hard negatives\n【5】SimANS: Simple Ambiguous Negatives Sampling for Dense Text Retrieval"
+   },
+   {
+    "type": "qa",
+    "q": "2.6 相同文章采样方法",
+    "a": "思路：文档正例所在的文章里，其他文档片段当作难负例，毕竟至少是属于同一主题的，和随\n机样本比起来比较难区分。\n存在问题：实际应用场景下，如果你的数据比较脏，难例挖掘用处可能不大。"
+   },
+   {
+    "type": "qa",
+    "q": "2.7 LLM辅助生成软标签及蒸馏",
+    "a": "方法：根据用户问题召回的相关文档片段最终是要为LLM回答问题服务的，因此LLM认为召回\n的文档是否比较好很重要，以下介绍的方法是bge2提出的。对于向量化模型的训练，可以让\nLLM帮忙生成样本的辅助标签，引导向量化模型训练。辅助标签的生成可用如下公式表示。在\n已知LLM需要输出的标准答案下，分别将问题和各个文档片段C放入LLM的prompt中，看LLM\n生成标准答案的概率r大小，当作辅助标签。r越大，表示起对应的文档片段对生成正确答案的\n贡献越大，也就越重要。\n存在问题：\n打标要求有点太高；\n很多实际应用场景，我们并没法拿到LLM回答的标准答案，同时对每个问题的候选文档\n片段都计算一个r，开销貌似有点大。\n优化策略：\n利用以上LLM生成的标签以及KL散度（笔者认为论文里这个形式的公式不能叫做KL散度\n吧。。），对模型进行优化。P为某个问题q对应的候选文档片段p的集合，e表示向量，<.,.>表示\n相似度操作，w是对所有候选文档p对应的辅助标签值r经过softmax变换后的值。本质是，如果LLM\n认为某个文档片段越重要，给它的优化权重越大。为了进一步稳定蒸馏效果，还可以对候选文档片\n段根据r进行排序，只用排名靠后的样本进行优化。"
+   },
+   {
+    "type": "section",
+    "q": "辅助知识",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "附一：梯度计算方法",
+    "a": "以稠密检索常用的BCE loss为例，正例与采样的负例在计算完语义相似度分数后，均会被softmax\n归一化，之后计算得到的梯度如下所示：\n注：\n: 经过softmax归一化后的语义相似度分数"
+   }
+  ]
+ },
+ {
+  "topic": "SFT 数据生成",
+  "source": "大模型生成SFT数据方法面试题",
+  "items": [
+   {
+    "type": "qa",
+    "q": "一、SFT数据集如何生成？",
+    "a": "SFT数据集构建通常有两种方法：人工标注和使用LLM（比如GPT-4）来生成的，人工标注对于构\n建垂直领域比较合适，可以减少有偏数据，但是成本略高；使用LLM生成，可以在短时间内生成大\n量数据。\nSFT数据集构建以及SFT微调Pipeline如下图所示："
+   },
+   {
+    "type": "section",
+    "q": "二、Self-Instruct 篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "2.1 什么是 Self-Instruct ？",
+    "a": "Self-Instruct（https://arxiv.org/abs/2212.10560）：一个通过预训练语言模型自己引导自己来提高\n的指令遵循能力的框架。"
+   },
+   {
+    "type": "qa",
+    "q": "2.2 Self-Instruct 处理思路？",
+    "a": "步骤1：作者从 175个种子任务中随机抽取 8 条自然语言指令作为示例，并提示InstructGPT生\n成更多的任务指令。\n步骤2：作者确定步骤1中生成的指令是否是一个分类任务。如果是，他们要求 InstructGPT 根\n据给定的指令为输出生成所有可能的选项，并随机选择特定的输出类别，提示 InstructGPT 生\n成相应的“输入”内容。对于不属于分类任务的指令，应该有无数的“输出”选项。作者提出了“输\n入优先”策略，首先提示 InstructGPT根据给定的“指令”生成“输入”，然后根据“指令”和生成的“输\n入”生成“输出”。\n步骤3：基于第 2 步的结果，作者使用 InstructGPT 生成相应指令任务的“输入”和“输出”，采用\n“输出优先”或“输入优先”的策略。\n步骤4：作者对生成的指令任务进行了后处理(例如，过滤类似指令，去除输入输出的重复数\n据)，最终得到52K条英文指令"
+   },
+   {
+    "type": "section",
+    "q": "三、Backtranslation 篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "3.1 什么是 Backtranslation？",
+    "a": "回译在传统的机器学习中是一种数据增强方法，比如从中文翻译成英文，再从英文翻译会中文，这\n样生成的中文与原来的中文在语义上是一致的，但是文本不同；然而SFT数据生成的回译\n（https://arxiv.org/abs/2308.06259）则是通过输出来生成指令，具体步骤如下图所示："
+   }
+  ]
+ },
+ {
+  "topic": "RLHF",
+  "source": "大模型RLHF相关面试题",
+  "items": [
+   {
+    "type": "qa",
+    "q": "一、介绍一下 LLM的经典预训练Pipeline？",
+    "a": "目前基于Transformer decoder的LLM，比如ChatGPT、LLaMA、baichuan等，通常都会有基于预训练的base模\n型和在base模型至少使用RLHF微调的Chat模型，Chat模型的训练一般都包括如下三个步骤：预训练，有监督微\n调和对齐。\n1.在预训练阶段，模型会从大量无标注文本数据集中学习通用知识；\n2.使用「有监督微调」（SFT）优化模型以更好地遵守特定指令；\n3.使用对齐技术使LLM可以更有用且更安全地响应用户提示。"
+   },
+   {
+    "type": "section",
+    "q": "二、预训练（Pre-training）篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "2.1 具体介绍一下 预训练（Pre-training）？",
+    "a": "预训练（Pre-training）：利用数十亿到数万亿个token的庞大文本语料库 对模型继续 预训练，使 模型 能够 根据\n提供的文本来预测「下一个单词」。"
+   },
+   {
+    "type": "section",
+    "q": "三、有监督微调（Supervised Tinetuning）篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "3.1 具体介绍一下 有监督微调（Supervised Tinetuning）？",
+    "a": "有监督微调（Supervised Tinetuning）:虽然 SFT 训练目标和 预训练（Pre-training）类似，也是 需要模型 预测\n「下一个单词」，但是需要人工标注的指令数据集，其中模型的输入是一个指令（根据任务的不同，也可能包含\n一段输入文本），输出为模型的预期回复内容。"
+   },
+   {
+    "type": "qa",
+    "q": "3.2 有监督微调（Supervised Tinetuning）的训练数据格式是什么样？",
+    "a": "Instruction: \"Write a limerick about a pelican.\"\n指令：“写一首关于鹈鹕的打油诗。“\nOutput: \"There once was a pelican so fine...\"\n输出：“从前有一只鹈鹕很好...“\n模型会把“Write a limerick about a pelican”作为输入，逐个token进行预测，输出“There once was a pelican so\nfine...”"
+   },
+   {
+    "type": "qa",
+    "q": "3.3 预训练（Pre-training） vs 有监督微调（Supervised Tinetuning）区别？",
+    "a": "相同点：\n训练目标相同：模型需要根据提供的文本来预测「下一个单词」；\n不同点：\n训练数据量不同：有监督微调（Supervised Tinetuning）需要训练数据量比 预训练（Pre-training）\n小很多；\n训练数据格式不同：有监督微调（Supervised Tinetuning）需要人工标注的训练数据，预训练（Pre-\ntraining） 不需要；"
+   },
+   {
+    "type": "section",
+    "q": "四、对齐（Alignment）篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "4.1 简单介绍一下 对齐（Alignment）？",
+    "a": "对齐（Alignment）：通过微调的方式，将语言模型与人类的偏好、价值观进行对齐，这也是RLHF机制发挥的地\n方。"
+   },
+   {
+    "type": "section",
+    "q": "五、Reinforcement Learning with Human Feedback (RLHF)篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "5.1 简单介绍一下 RLHF 流程？",
+    "a": "1.在预训练好的模型上进行「有监督微调」（SFT）；\n2.在有监督微调模型基础上创建一个reward model（RM）模型；\n3.基于RM模型使用PPO算法微调SFT模型；"
+   },
+   {
+    "type": "qa",
+    "q": "5.2 如何在在预训练好的模型上进行有监督微调？",
+    "a": "先收集一个Prompts集合，并要求标注人员写出高质量的回复，然后使用该数据集以监督的方式微调预训练的基\n础模型。"
+   },
+   {
+    "type": "qa",
+    "q": "5.3 如何在有监督微调模型基础上创建一个RM模型？",
+    "a": "对于每个Prompt，要求有监督微调后的LLM生成四到九个回复，再由标注人员根据个人偏好对所有回复进行排\n序。虽然排序过程很耗时，但工作量还是比第一步的有监督数据集构建要少一些。\n在处理排序数据时，使用了一个奖励模型RM，RM来自RLHF第一步的「有监督微调语言模型」（SFT），SFT\n的输出通过一个回归层（单个输出节点）转换为奖励分数，即可称为RM模型。"
+   },
+   {
+    "type": "qa",
+    "q": "5.4 如何基于RM模型使用PPO算法微调SFT模型？",
+    "a": "基于RM模型使用proximal policy optimization (PPO)算法微调SFT模型"
+   },
+   {
+    "type": "qa",
+    "q": "5.5 instructGPT的原理，讲讲rlhf和reward？",
+    "a": "instructGPT是一种基于强化学习的文本生成模型，其核心原理涉及两个概念：RLHF（Reinforcement Learning\nfrom Human Feedback）和reward shaping（奖励塑造）。\nRLHF：在训练instructGPT时，首先使用有人类生成的示例对模型进行预训练。然后，通过与人类评估者进\n行交互，收集评估结果，以创建一个用于强化学习的数据集。该数据集包含了人类评估者对生成结果的评分\n或反馈，用于指导模型的强化学习训练。\nReward shaping：为了更好地引导模型的训练，reward shaping用于调整模型的奖励信号。通过将人类评估\n者的反馈与模型生成的文本进行比较，可以计算出一个差异度量，用作奖励信号的一部分。这样，模型可以\n根据这个奖励信号进行训练，并进行强化学习的训练。模型根据当前的状态（对话历史）生成文本，并通过\n奖励信号来评估生成文本的质量。模型的目标是最大化预期累积奖励，从而生成更高质量的文本。\n通过RLHF和reward shaping的结合，instructGPT能够通过人类评估者的反馈指导模型的生成过程，并逐步提升\n生成文本的质量和一致性。"
+   },
+   {
+    "type": "section",
+    "q": "六、LLaMA 2 的 RLHF 篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "6.1 介绍一下 LLaMA 2 的 RLHF？",
+    "a": "Llama-2-chat在第一步RLHF微调上使用相同的指令数据，但在第二步使用了两个奖励模型；通过多个阶段的不\n断进化，奖励模型也会根据Llama-2-chat模型出现的错误进行更新；并且增加了拒绝采样（rejection\nsampling）步骤。"
+   },
+   {
+    "type": "qa",
+    "q": "6.2 LLaMA 2 中 Margin Loss 的 实现逻辑？",
+    "a": "标准InstructGPT 中 RLHF PPO方法 思路：对同一个提示下的4-9个模型输出并进行排序。\neg：四个回复的排序结果为A<C< D<B，那么就可以得到六个对比结果：A < C，A < D ，A < B，C < D，C <\nB，D < B\nLlama 2 的 Margin Loss：每次只能看到两个（而非4-9个）回复并进行对比，但新增了一个边际（margin）\n标签，对比结果可以为「显著更好」（significantly better）和「好的不明显」（negligibly better）\n在排序训练时中，Llama 2相比InstructGPT增加了边际损失：\n其中，rθ（x，y）是提示x和生成的回复y的标量分数输出; θ为模型权重; σ是将层输出转换为范围\n从0到1的分数的逻辑S形函数; yc是由标注人员选择的更优回复; yr是较差的回复。m(r)可以调节\n两个回复之间的差值，如果对比结果为「显著更好」，则会增加梯度值，加快更新速度。"
+   },
+   {
+    "type": "qa",
+    "q": "6.3 LLaMA 2 中 两个RM模型 的 实现逻辑？",
+    "a": "Llama 2中的两个奖励模型：\n侧重「有用性」（helpfulness）\n「安全性」（safety）\n用于模型优化的最终奖励函数会将两个分数进行线性组合。"
+   },
+   {
+    "type": "qa",
+    "q": "6.4 LLaMA 2 中 拒绝采样 逻辑？",
+    "a": "Llama 2 使用了一个训练流水线，同时使用PPO和拒绝采样算法，迭代地产生多个RLHF模型（从RLHF-V1到\nRLHF-V5），模型在拒绝采样时会得到K个输出，并使用最高奖励的输出更新梯度，而PPO每次只基于单样本进\n行更新。\n在监督微调的初始阶段之后，模型只使用拒绝采样进行训练，然后再结合拒绝采样和PPO。"
+   },
+   {
+    "type": "section",
+    "q": "七、 RLHF 替代方案篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "7.1 为什么需要 RLHF 替代方案？",
+    "a": "虽然 RLHF在InstructGPT和Llama 2论文中被证明是有效的，但是RLHF的过程是比较复杂的。"
+   },
+   {
+    "type": "qa",
+    "q": "7.2 RLHF 有哪些替代方案？",
+    "a": "替代方案 1：Constitutional AI: Harmlessness from AI Feedback\n论文名称：Constitutional AI: Harmlessness from AI Feedback\n论文链接：https://arxiv.org/abs/2212.08073\n论文 提出了一种基于人类提供的规则列表的自我训练机制。与前面提到的InstructGPT论文类似，也使用了强化\n学习方法。\n上图中的「红队」（Red Team）指的是测试目标系统的防御能力，即外部或内部专家模拟潜在对手的过程，通\n过模仿现实世界攻击者的战术、技术和程序来挑战、测试并最终改进系统。\n替代方案 2：The Wisdom of Hindsight Makes Language Models Better Instruction Followers\n论文名称：The Wisdom of Hindsight Makes Language Models Better Instruction Followers\n论文链接：https://arxiv.org/abs/2302.05206\n论文提出了一种基于重新标记的监督微调方法HIR，该方法在12个BigBench任务上优于RLHF。\nHIR是如何工作的？简而言之，HIR方法包括两个步骤，即采样和训练。在采样步骤中，Prompt和指令输入给\nLLM来获取答案，根据对齐得分，在训练阶段适当的地方重新标注指令；然后，重新标记的指令和原始的Prompt\n用于微调LLM。使用这种重新标记的方法，研究人员有效地将失败案例（LLM创建的输出与原始指令不匹配的案\n例）转化为有用的训练数据，用于监督学习。\n替代方案 3：Direct Preference Optimization: Your Language Model is Secretly a Reward Model\n论文名称：Direct Preference Optimization: Your Language Model is Secretly a Reward Model\n论文链接：https://arxiv.org/abs/2305.18290\n直接偏好优化（DPO）是具有PPO的RLHF的替代方案，其中研究人员表明，在RLHF中拟合奖励模型的交叉熵\n损失可以直接用于微调LLM。根据他们的基准，使用DPO更有效，而且在响应质量方面通常也优于RLHF/PPO。\n替代方案 4：Reinforced Self-Training (ReST) for Language Modeling\n论文名称：Reinforced Self-Training (ReST) for Language Modeling\n论文链接：https://arxiv.org/abs/2308.08998\nReST是人类反馈强化学习（RLHF）的一种替代方案，它使LLM与人类偏好保持一致。ReST使用采样方法创建\n改进的数据集，在质量越来越高的子集上迭代训练，以完善其奖励函数。根据作者的说法，与标准的在线RLHF\n方法（如具有近端策略优化的RLHF，PPO）相比，ReST通过离线生成训练数据集实现了更高的效率，但缺少与\nInstructGPT或Llama 2中使用的标准RLHF PPO方法的全面比较。\n替代方案 5：RLAIF: Scaling Reinforcement Learning from Human Feedback with AI Feedback\n论文名称：RLAIF: Scaling Reinforcement Learning from Human Feedback with AI Feedback\n论文链接：https://arxiv.org/abs/2309.00267\n最近的人工智能反馈强化学习（RLAIF）研究表明，RLHF中奖励模型训练的评级不一定必须由人类提供，而是\n可以由LLM生成（此处：PaLM 2）。标注人员在一半的案例中更喜欢RLAIF模型，也就意味着两个模型的差距并\n不大，RLHF和RLAIF都大大优于纯通过监督指令微调训练的模型。\n这项研究的结果非常有用和有趣，因为它基本上意味着我们可能能够使基于RLHF的训练更加高效和容易。然\n而，这些RLAIF模型在专注于信息内容的安全性和真实性的定性研究中的表现还有待观察，而人类偏好研究仅部\n分捕捉到了这一点。"
+   },
+   {
+    "type": "section",
+    "q": "八、 RLHF 实践篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "8.1 RLHF 训练过程，怎么选取最优 checkpoint？",
+    "a": "动机\nRLHF 训练过程，因为 Reward Model 输出的只是一个近似奖励（Proxy Reward），\n导致不能完全相信训练过程中的 Reward 变化，“更高” 的 Reward 不一定意味着 “更好” 的效果。\n可以看这一张图片：\n注：横轴为训练模型 & 初始模型之间的KL，纵轴为 reward 分数；虚线是近似 reward（RM 打出\n的分数），实线是真实的 reward（大多数情况下无法直接获得）\n从上图可以看到：随着「训练模型」和「初始模型」之间的 KL（可简单理解为差异）越大，模型的「真实分\n数」会先逐步提升，到达某个峰值后逐渐减小（图中实线），但「近似分数」（由 Reward Model 打出来的分\n数）却一直在稳步上升（图中虚线），显然，在「真实分数」曲线的「最高点」就是我们所期望得到「最优模\n型」的时间点。"
+   },
+   {
+    "type": "qa",
+    "q": "如何找到真实 reward 的「最高点」（最优 checkpoint）？",
+    "a": "真实 Reward 的估算公式\n我们假定：真实 reward 曲线与「当前模型和初始模型」之间的 KL 存在某种关系。\n由于 KL 是一个可以被实时计算的数值，如果我们能够找出这种存在的「关系」，那我们就能找出真实 reward\n的最高点对应的 KL 值是多少，从而找出最优模型。\nOpenAI 帮我们找到了这个计算公式：\n不同训练方法对应的公式稍有不同\n其中，BON（best of n）也叫 reject sampling，RL 使用 PPO，我们发现不同的训练方式对应的\n公式也稍有不同。\nBON 指先让模型生成一堆 response，再利用 RM 从中挑出最好的几个回复用于后续模型训练。\n公式里最关键的就是 3 个参数：α 、β 和 d。\nd 被定义为初始模型和当前模型的 KL 开根号，这个比较好算；\n剩下的就是 α 和 β 该等于多少。\n论文中表明：α 和 β 这 2 个值跟「Reward Model 大小」和「Reward Model 训练数据规模」等\n因素有关。\nα 和 β 的值\n制变量法，为了探究 RM 的大小和 α、β之间的关系，\n实验中固定了 actor 模型的大小（1.2B）、训练 RM 所用的数据集大小（9w条），\n下图是使用 BON 作为训练方法，不同 RM 大小的实验结果：\n不同 RM 规模对应的 α 和 β 的值\n根据图中给的点，挑选 1e7、1e8 和 1e9 这 3 个规模对应的 α 和 β 值，\n将上述参数代入 R_bon(d) 公式，并尝试绘制 reward 曲线图，结果如下：\n3 种 RM 规模在 0 到 3.5 KL 区间内对应的真实 reward 曲线图\n曲线图的走势和论文中大致相同，证明该公式有效。\n从图中我们大致可以得出以下几个结论：\n1.相同训练数据下，Reward Model 越大 actor 模型能够获得更高的真实 reward。\n2.Reward Mode 越大，能够支持模型在「不偏离真实奖励的路途上走更远」，即在更大的 KL 处发生下降转\n折。\n当然，论文中的数据存在一定的局限性，不一定在所有的任务、所有的规模下都适用，\n不过这种研究 scaling law 的思路，以及提出用 KL 来作为一种可能衡量「学习程度」的指标是非常有意义的。\n除了上述这 2 个 R 和 KL 之间的计算公式外，论文中还提了一些其他有借鉴意义的经验性结论。\nReward Model 训练数据集的 Scaling Law\n为了探究 RM Dataset 的规模对最终模型的影响，实验中固定在 12M 的 RM 下进行实验，结果如下：\n从上图中可以看到，RM 数据集越大对最终的提升就越大（这很直觉），但数据集最少也需要超过 2000。\n因为如果训练数据量低于 2k，无论 RM 在哪个规模、无论使用 BON 还是 RL，对模型最终的提升都非常小。\n当然，论文中 2k 这个数字只是在 3M~3B 大小的模型下得出的结论，\n至于更大的模型大小是否还符合 2k 这个下限我们就不得而知。\nPolicy Model 的 Scaling Law\n探究完了 RM 的 Scaling Law，论文中还对 Policy Model 的大小做了对比实验。\n文中选用 1.2B 和 6B 这 2 个大小的模型进行对比，固定 RM 大小为 12M，结果如下：\n1.2B 和 6B 在 2 种不同训练方式下的对比实验\n从上图可以得出 2 个结论：\n1.Policy Model 越大，利用 RM 做提升的收益就越小：在 BON 下，1.2B 模型提升大约为 0.7 分（0 ->\n0.7），6B 模型提升大约为 0.35 分（0.4 -> 0.75），不过这是因为越大的模型初始分就较高导致提升没有那\n么大，绝对分数上来看还是模型越大越好的;\n2.无论模型规模如何，最优 Reward 对应的 KL 值是一样的：这一点比较反直觉，我们通常会认为较大的模型\n应该能够更快的 hacking 掉 reward model，应该在更小的 KL 处就达到最高的 reward 峰值，但实验结果并\n非如此（在 RL 实验中 2 个峰值对应的 KL 几乎重合）。"
+   }
+  ]
+ },
+ {
+  "topic": "强化学习",
+  "source": "大模型强化学习面试题",
+  "items": [
+   {
+    "type": "qa",
+    "q": "1 简单介绍强化学习？",
+    "a": "强化学习：（Reinforcement Learning）一种机器学习的方法，通过从外部获得激励来校正学习方向从而获得一\n种自适应的学习能力。"
+   },
+   {
+    "type": "qa",
+    "q": "2 简单介绍一下 RLHF？",
+    "a": "基于人工反馈的强化学习（Reinforcement Learning from Human Feedback，RLHF）：构建人类反馈数据集，\n训练一个激励模型，模仿人类偏好对结果打分，这是GPT-3后时代大语言模型越来越像人类对话核心技术。"
+   },
+   {
+    "type": "qa",
+    "q": "3.奖励模型需要和基础模型一致吗？",
+    "a": "不同实现方式似乎限制不同。（待实践确认）colossal-ai的coati中需要模型有相同的tokenizer，所以选模型只能\n从同系列中找。在ppo算法实现方式上据说trlx是最符合论文的。"
+   },
+   {
+    "type": "qa",
+    "q": "4.RLHF 在实践过程中存在哪些不足？",
+    "a": "1.不足点1：人工产生的偏好数据集成本较高，很难量产；\n2.不足点2：三个阶段的训练（SFT->RM->PPO）过程较长，更新迭代较慢；\n3.不足点3：PPO 的训练过程同时存在4个模型（2训练，2推理），对计算资源的要求较高。"
+   },
+   {
+    "type": "qa",
+    "q": "5.如何解决 人工产生的偏好数据集成本较高，很难量产问题？",
+    "a": "解决方法：AI 专家替代派\n代表方法：\n1.RLAIF\n该方法的核心在于通过AI 模型监督其他 AI 模型，即在SFT阶段，从初始模型中采样，然后生成自我批评和修\n正，然后根据修正后的反应微调原始模型。 在 RL 阶段，从微调模型中采样，使用一个模型来评估生成的样本，\n并从这个 AI 偏好数据集训练一个偏好模型。 然后使用偏好模型作为奖励信号对 RL 进行训练，即 RL from AI\nFeedback（RLAIF）。\n1.RRHF\nRRHF(Rank Response from Human Feedback) 不需要强化学习，可以利用不同语言模型生成的回复，包括\nChatGPT、GPT-4 或当前的训练模型。RRHF通过对回复进行评分，并通过排名损失来使回复与人类偏好对齐。\nRRHF 通过通过排名损失使评分与人类的偏好（或者代理的奖励模型）对齐。RRHF 训练好的模型可以同时作为\n生成语言模型和奖励模型使用"
+   },
+   {
+    "type": "qa",
+    "q": "6.如何解决三个阶段的训练（SFT->RM->PPO）过程较长，更新迭代较慢问题？",
+    "a": "解决方法：微调数据优化派\n方法介绍：该类方法的核心在于仅仅通过优质数据集的获取和产生，以训练得到一个效果较好的\nSFT 模型，而无需进行 RM 和 PPO 的训练。\n代表方法：\n1.LIMA\nLIMA(Less Is More for Alignment) 即浅层对齐假说，即一个模型的知识和能力几乎完全是在预训练中学习的，而\n对齐则是教会它与用户交互时如何选择子分布。如果假说正确，对齐主要有关于学习方式，那么该假说的一个推\n论是，人们可以用相当少的样本充分调整预训练的语言模型。因此，该工作假设，对齐可以是一个简单的过程，\n模型学习与用户互动的风格或格式，以揭示在预训练中已经获得的知识和能力。\n1.MAYBE ONLY 0.5% DATA IS NEEDED\n本文主要从数据角度来探讨如何降低 LLM 训练阶段的成本，提高数据效率。为了实现该目的，作者通过从现有\n数据中识别出最有价值的核心样本来帮助模型获取下游任务的知识，并仅用少量数据来实现可比甚至更好的性\n能。"
+   },
+   {
+    "type": "qa",
+    "q": "7.如何解决 PPO 的训练过程同时存在4个模型（2训练，2推理），对计算资源的要求较高 问题？",
+    "a": "解决方法：训练过程改造派\n方法介绍：该类方法通常通过改造模型的训练方式（如只保留SFT和RM），以提高训练效率并减少\n训练成本。\n代表方法：\n1.RAFT\nRAFT（Reward rAnked FineTuning），它基于关于通过奖励和监督微调对样本进行排序的组合的形式。\n1.DPO\nDPO(Direct Preference Optimization) 提出了一种使用二进制交叉熵目标来精确优化LLM的方法，以替代基于 RL\nHF 的优化目标，从而大大简化偏好学习 pipeline。"
+   }
+  ]
+ },
+ {
+  "topic": "PPO",
+  "source": "大模型强化学习PPO面试题",
+  "items": [
+   {
+    "type": "qa",
+    "q": "一、大语言模型RLHF中的PPO主要分哪些步骤？",
+    "a": "大语言模型RLHF中的PPO 分为：\n1.采样\n2.反馈\n3.学习\n对应的实现逻辑如下：\npolicy_model = load_model()\nfor k in range(20000):\n# 采样（生成答案）\nprompts = sample_prompt()\ndata = respond(policy_model, prompts)\n# 反馈（计算奖励）\nrewards = reward_func(reward_model, data)\n# 学习（更新参数）\nfor epoch in range(4):\npolicy_model = train(policy_model, prompts, data, rewards)"
+   },
+   {
+    "type": "qa",
+    "q": "二、举例描述一下 大语言模型的RLHF？",
+    "a": "大语言模型的RLHF，实际上是模型先试错再学习的过程。\n大语言模型的RLHF 好比是：老师与学生的角色\n我们扮演着老师的角色，给出有趣的问题。模型则会像小学生一样，不断尝试给出答案。\n模型会根据我们给出的问题，写出它觉得正确的答案，但是这些答案不一定是真的答案，需要我们结合正确\n答案进行打分。如果它表现得好，就会给予它高声赞扬；如果它表现不佳，我们则会给予它耐心的指导和反\n馈，帮助它不断改进，直到达到令人满意的水平。"
+   },
+   {
+    "type": "section",
+    "q": "三、大语言模型RLHF 采样篇",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "3.1 什么是 PPO 中 采样过程？",
+    "a": "PPO 中 采样过程：学生回答问题的过程，是模型根据提示（prompt）输出回答（response）的过程，或者说是\n模型自行生产训练数据的过程。\neg:"
+   },
+   {
+    "type": "qa",
+    "q": "3.2 介绍一下 PPO 中 采样策略？",
+    "a": "PPO 中 采样工作 通过一种策略（policy）：policy由两个模型组成，一个叫做演员模型（Actor），另一个叫\n做评论家模型（Critic）。它们就像是学生大脑中的两种意识，一个负责决策，一个负责总结得失。\n演员：我们想要训练出来的大模型。在用PPO训练它之前，它就是RLHF的第一步训练出来的\nSFT（Supervised Fine-Tuning）model。输入一段上下文，它将输出下一个token的概率分布。\n评论家：强化学习的辅助模型，输入一段上下文，它将输出下一个token的“收益”。"
+   },
+   {
+    "type": "qa",
+    "q": "3.3 PPO 中 采样策略中，如何评估“收益”？",
+    "a": "从下一个token开始，模型能够获得的总奖励（浮点数标量）。这里说的奖励包括Reward Model给出的奖励。"
+   }
+  ]
+ },
+ {
+  "topic": "大模型进阶",
+  "source": "大模型进阶面试题",
+  "items": [
+   {
+    "type": "qa",
+    "q": "一、什么是生成式大模型？",
+    "a": "生成式大模型（一般简称大模型LLMs）是指能用于创作新内容，例如文本、图片、音频以及视频的一类深度学\n习模型。相比普通深度学习模型，主要有两点不同：\n1.模型参数量更大，参数量都在Billion级别；\n2.可通过条件或上下文引导，产生生成式的内容（所谓的prompt engineer就是由此而来）。"
+   },
+   {
+    "type": "qa",
+    "q": "二、大模型是怎么让生成的文本丰富而不单调的呢？",
+    "a": "1.从训练角度来看：\na.基于Transformer的模型参数量巨大，有助于模型学习到多样化的语言模式与结构；\nb.各种模型微调技术的出现，例如P-Tuning、Lora，让大模型微调成本更低，也可以让模型在垂直领域\n有更强的生成能力；\nc.在训练过程中加入一些设计好的loss，也可以更好地抑制模型生成单调内容；\n2.从推理角度来看：\na.基于Transformer的模型可以通过引入各种参数与策略，例如temperature，nucleus samlper来改变每\n次生成的内容。"
+   },
+   {
+    "type": "section",
+    "q": "三、LLMs 复读机问题",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "3.1 什么是 LLMs 复读机问题？",
+    "a": "LLMs 复读机问题:\n1.字符级别重复，指大模型针对一个字或一个词重复不断的生成\n例如在电商翻译场景上，会出现“steckdose steckdose steckdose steckdose steckdose steckdose steckdose\nsteckdose...”；\n1.语句级别重复，大模型针对一句话重复不断的生成\n例如在多模态大模型图片理解上，生成的结果可能会不断重复图片的部分内容，比如“这是一个杯子，这是一个\n杯子...”；\n1.章节级别重复，多次相同的prompt输出完全相同或十分近似的内容，没有一点创新性的内容\n比如你让大模型给你写一篇关于春天的小作文，结果发现大模型的生成结果千篇一律，甚至近乎一摸一样。\n1.大模型针对不同的prompt也可能会生成类似的内容，且有效信息很少、信息熵偏低"
+   },
+   {
+    "type": "qa",
+    "q": "3.2 为什么会出现 LLMs 复读机问题？",
+    "a": "1.数据偏差：大型语言模型通常是通过预训练阶段使用大规模无标签数据进行训练的。如果训练数据中存在大\n量的重复文本或者某些特定的句子或短语出现频率较高，模型在生成文本时可能会倾向于复制这些常见的模\n式。\n2.训练目标的限制：大型语言模型的训练通常是基于自监督学习的方法，通过预测下一个词或掩盖词来学习语\n言模型。这样的训练目标可能使得模型更倾向于生成与输入相似的文本，导致复读机问题的出现。\n3.缺乏多样性的训练数据：虽然大型语言模型可以处理大规模的数据，但如果训练数据中缺乏多样性的语言表\n达和语境，模型可能无法学习到足够的多样性和创造性，导致复读机问题的出现。\n4.模型结构和参数设置：大型语言模型的结构和参数设置也可能对复读机问题产生影响。例如，模型的注意力\n机制和生成策略可能导致模型更倾向于复制输入的文本。\n5.从 induction head[1]机制的影响角度：也就是模型会倾向于从前面已经预测的word里面挑选最匹配的词；\n在翻译上，由于input和output的天然差异性，你会发现容易出现重复的都是一些复杂度perplexity比较高的文\n本：也就是说input的句式越不常见，本身重复度越高，翻译结果重复的可能性也越高。\n注：我们分别以flores-101通用文本和电商标题文本做了尝试，后者出现重复的概率是前者的20倍以上。\n1.从信息熵的角度分析。“在模型生成采样时，我们就应该只采样那些与条件熵对应概率接近的字符”[2]，但是\n我更理解为信息淹没；比如电商标题，作为一种语句连贯性很弱、基本是词序堆叠的文本，它的信息熵无疑\n是很高的，下一个词预测时，概率后验基本上很难预测出来，Softmax的分布也倾向于平稳，也就是说模型\n也预测不出来下一个词应该是什么。因此模型会倾向从前面的word里面挑选。无论是专业翻译大模型\nM2M、NLLB还是通用语言模型ChatGPT，LLAMA等, <HJIKL, HJIKLL, HJIKLL..>的TSNE二维分布基本一\n致；也就是你添加了LLLL后，文本语义基本没有变化。\n另一点，就是为什么会一直是一个词L的反复重复？因为当前面t-1个词的分布趋于稳定，t以及t+1后面重复出现\n的L词的分布基本会沿着前面t-1个词的TSNE二维分布均匀铺开，也就是我们常说的各向异性，虽然生成的数量\n长了，但是<HJIKL, HJIKLL, HJIKLL..>的分布几乎不影响。这一点很值得探索，对应的解决方案也相当大力破\n巧。"
+   },
+   {
+    "type": "qa",
+    "q": "3.3 如何缓解 LLMs 复读机问题？",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "3.3.1 Unlikelihood Training",
+    "a": "思路：在训练中加入对重复词的抑制来减少重复输出；\n介绍\n式中集合C代表上文生成的token，本身likelihood training loss是要促使模型学习到原标签中自然的语言逻辑，而\n修改后的loss不仅要促进模型学习到真实标签的语言自然性，也要通过unlikelihood loss抑制模型，使其尽量不生\n成集合C中的token。一般对于生成式任务，只需要在原模型基础上加入unlikelihood training进行sentence级\n别finetune即可，不需要通过token级别的unlikelihood和likelihood loss叠加训练。（如果进入叠加训练虽然\n会降低重复率，但是句子困惑度会升高，准确率会下降）\ntoken级unlikelihood training loss\nsentence级unlikelihood training loss\n各训练Loss下的重复度结果\n注：上图为论文中的结果，其中seq-rep-4代表4-gram重复率；uniq-seq代表总共出现的不同词的\n个数；ppl代表句子困惑度；acc代表句子准确性；rep代表前词重复率；wrep代表加权前词重复\n率。从这些指标中可以明显观察到，unlikelihood training能降低整体生成句子的重复度。\nunlikelihood training方法是一种表现不错的抑制重复方式，但其中集合C的设计比较困难。针对不同的任务，集\n合C都需要进行精心的设计，才能保证在生成精度基本不降的情况下抑制模型生成重复与单调的结果。（该方法\n仅能解决1.1节中阐述的前两种重复问题，无法解决输入多次相同prompt输出单调性的问题）\n参考：NEURAL TEXT DEGENERATION WITH UNLIKELIHOOD TRAINING"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.2 引入噪声",
+    "a": "在生成文本时，引入一些随机性或噪声，例如通过采样不同的词或短语，或者引入随机的变换操作，以增加生成\n文本的多样性。这可以通过在生成过程中对模型的输出进行采样或添加随机性来实现。"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.3 Repetition Penalty",
+    "a": "思路：重复性惩罚方法通过在模型推理过程中加入重复惩罚因子，对原有softmax结果进行修正，降低重复生\n成的token被选中的概率\n注：其中T代表温度，温度越高，生成的句子随机性越强，模型效果越不显著；I就代表惩罚项，\nc代表我们保存的一个list，一般为1-gram之前出现过的单词，theta值一般设置为1.2，1.0代表没\n有惩罚。\n重复性惩罚方法是一种简单有效的重复抑制手段，因为它通过提高I值，有效降低集合c中词再次被选中的概率。\n当然，类似与unlikelihood training，本方法也可以通过设置不同的c集合来改变惩罚的方向。（该方法仅能解决\n1.1节中阐述的前两种重复问题，无法解决输入多次相同prompt输出单调性的问题）\n参考：CTRL: A CONDITIONAL TRANSFORMER LANGUAGE MODEL FOR CONTROLLABLE\nGENERATION\nHuggingface中，model.generate已经包含此参数，仅需设置repetition_penalty=p（p>1.0）即可\n开启重复惩罚因子"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.4 Contrastive Search",
+    "a": "动机：Contrastive Search方法是为了解决原先解码方法，例如Beam Search，在采用最大化生成方式解码时\n出现解码退化的问题即生成的文本不自然的，并包含文本重复而提出的一种解决方案\n思路：对比loss以及对比搜索两个创新点，从模型训练和模型推理层面缓解了生成式模型重复以及单调问\n题。\n其中对比loss通过在原loss基础上添加对比loss，即对比token间相似度的方式去解决生成式模型重复单调问题，\n公式如下：\n其中\n就是余弦相似度，下图给出了训练前后token间的相似度：\n对比训练前后token相似度\n从图上可以明显看出token间相似度降低了，token间相似度降低即不同token在高维空间表征分离能有效降低模\n型仅生成个别重复词或字的概率。\n而对比搜索方法就是在decode阶段限制相似token生成的概率，大大降低生成内容重复率和单调性。\n其中第一项就是原模型的概率，后面一项可以理解成一种惩罚，当前token与历史token相似度较高时，就降低\n当前token的概率。\n对比loss和对比search在训练和推理两个阶段限制生成token间的相似度，有效降低了模型对一些特别常见表达的\n依赖，让模型尝试生成不一样的表达，整体上提升模型的创造性。（该方法仅能解决1.1节中阐述的前两种重复\n问题，无法解决输入多次相同prompt输出单调性的问题）\n参考论文地址：A Contrastive Framework for Neural Text Generation\nGithub 地址：https://github.com/yxuansu/SimCTG\nHuggingface中，model.generate已经包含此参数，仅需设置penalty_alpha=alpha\n（0<alpha<1） 即可开启对比Search因子alpha"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.5 Beam Search",
+    "a": "思路：Beam Search是对贪心策略一种改进。思路简单，就是稍微放宽考察的范围。在每一个时间步，不再\n只保留当前分数最高的1个输出，而是保留num_beams个。当num_beams=1时集束搜索（Beam Search）\n就退化成了贪心搜索。Beam Search虽然本质上并没有降低重复率的操作，但是该策略确实在结果上优化了\n部分生成结果，降低了一定的重复率。\n下图是一个实际的例子，每个时间步有ABCDE共5种可能的输出，图中的num_beams=2，也就是说每个时间步\n都会保留到当前步为止条件概率最优的2个序列。\nBeam Search搜索方式\nBeam search理论上仅是为了解决贪婪搜索给到的答案仅局部最优，而全局搜索又在时间复杂度上不可行而提出\n的折中算法，并不能对大模型中的任何重复问题进行修正，甚至有可能增大重复概率。但从翻译的测试实验结果\n来看，它确实在一定程度上改变了模型Softmax后的分布情况，优化了输出的结果，所以在部分大模型任务上能\n抑制重复生成问题。\n注：Huggingface中，model.generate中已经包含此参数，仅需设置num_beams=2即可开启集束\n搜索"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.6 TopK sampling",
+    "a": "TopK通过对Softmax的输出结果logit中最大的K个token采样来选择输出的token，该方法存在的问题是当概率分\n布很极端时，即模型很确定下一个token时，容易造成生成错误。以下图为例，TopK采样会选择最大的K个\ntoken，并通过logit值对K个token进行采样，相比于贪心搜索增添了随机性，相当于同样的输入，多次经过\nTopK采样生成的结果大概率不会一样。\nTopK采样是一种行之有效，能简单暴力的解决1.1节中提出所有重复单调问题的方案之一，当然它存在的最大问\n题是最后生成的句子存在狗屁不通现象，并不能保证句子的通顺度以及对prompt的忠诚度。\nHuggingface中，model.generate中已经包含此参数，需设置do_sample=True，开启采样模式，\n同时设置top_k值，top_k值默认为50"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.7 Nucleus sampler",
+    "a": "Nucleus sampler俗称TopP采样，一种用于解决TopK采样问题的新方法，该采样方式不限制K的数目，而是通\nSoftmax后排序token的概率，当概率大于P时停止，相当于当模型很确定下一个token时，可采样的K也会很\n少，减少异常错误发生的概率。以下图为例，TopP采样会不断选择logit中最大概率的token，放入一个list中，直\n到list中计算的总概率大于设置的TopP值，后对list中的token概率进行重新计算，最终根据计算出来的概率值对\nlist中的token进行采样。\nNucleus sampler是对简单暴力的TopK采样修改后的方法，也能解决1.1节中提出所有重复单调问题，相比\nTopK，该方法生成的句子通顺度以及对prompt的忠诚度更佳，一般选择它，而不选择TopK。\n注：Huggingface中，model.generate中已经包含此参数，需设置do_sample=True，开启采样模\n式，同时设置top_p值，top_p值默认为1.0"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.8 Temperature",
+    "a": "生成模型中抽样包含随机性，因此每次生成时，相同的prompt可能会产生不同的输出。温度是用于调整随机程度\n的数字。\nTemperature参数使用方法"
+   },
+   {
+    "type": "qa",
+    "q": "采样时如何选择温度?",
+    "a": "较低的温度意味着较少的随机性；温度为 0 将始终产生相同的输出。执行具有“正确”答案的任务，对于总结类，\n翻译类等具有明确答案的任务，较低的温度（小于1）更合适。如果模型开始自我重复，则表明温度设置过低。\n高温意味着更多的随机性，这可以帮助模型给出更有创意的输出。如果模型开始偏离主题或给出无意义的输出，\n则表明温度过高。温度调整公式如下：\nTemperature参数就是前面介绍repetition penalty中的T参数。\n提高Temperature配合上文两种采样算法，可以达到生成更激进创新性回答的需求，但生成句子的稳定性不可\n控。\nHuggingface中，model.generate中已经包含此参数，仅需设置temperature，默认为1.0"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.9 No repeat ngram size",
+    "a": "该方法是一种最暴力抑制重复的方法，通过限制设置的ngram不能出现重复，如果重复，就选概率次大的一个，\n来强制模型不生成重复的token。\n该功能一般都会开启，来保证生成的句子不犯很离谱的连续重复问题。（该方法仅能解决1.1节中阐述的前两种\n重复问题，无法解决输入多次相同prompt输出单调性的问题）\nHuggingface中，model.generate中已经包含此参数，仅需设置no_repeat_ngram_size=N即可"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.10 重复率指标检测",
+    "a": "在2.1节的表中列出了常见重复率监测指标：seq-rep-N，uniq-seq，rep，wrep。通过这些指标的融合，可以对重\n复生成的结果进行一定程度的监测，并在监测到异常生成结果时，通过加入特殊字符，修改prompt表达等形式\n来重新生成结果。\n通过我们的测试，通过切分或加入特殊字符的方式确实能让本身异常的翻译结果恢复正常，但潜在风险是翻译的\n语序可能会出现一定的问题。（对其他领域生成结果的影响有待进一步探索）"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.11 后处理和过滤",
+    "a": "对生成的文本进行后处理和过滤，去除重复的句子或短语，以提高生成文本的质量和多样性。可以使用文本相似\n度计算方法或规则来检测和去除重复的文本。"
+   },
+   {
+    "type": "qa",
+    "q": "3.3.12 人工干预和控制",
+    "a": "对于关键任务或敏感场景，可以引入人工干预和控制机制，对生成的文本进行审查和筛选，确保生成结果的准确\n性和多样性。"
+   },
+   {
+    "type": "section",
+    "q": "四、llama 系列问题",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "4.1 llama 输入句子长度理论上可以无限长吗？",
+    "a": "限制在训练数据。理论上rope的llama可以处理无限长度，但实际上存在一些限制和挑战。下面是一些相关的考\n虑因素：\n1.计算资源：生成长句子需要更多的计算资源，包括内存和计算时间。由于LLMs通常是基于神经网络的模型，\n计算长句子可能会导致内存不足或计算时间过长的问题。\n2.模型训练和推理：训练和推理长句子可能会面临一些挑战。在训练阶段，处理长句子可能会导致梯度消失或\n梯度爆炸的问题，影响模型的收敛性和训练效果。在推理阶段，生成长句子可能会增加模型的错误率和生成\n时间。\n3.上下文建模：LLMs是基于上下文建模的模型，长句子的上下文可能会更加复杂和深层。模型需要能够捕捉长\n句子中的语义和语法结构，以生成准确和连贯的文本。\n尽管存在这些挑战，研究人员和工程师们已经在不断努力改进和优化LLMs，以处理更长的句子。例如，可以采\n用分块的方式处理长句子，将其分成多个较短的片段进行处理。此外，还可以通过增加计算资源、优化模型结构\n和参数设置，以及使用更高效的推理算法来提高LLMs处理长句子的能力。"
+   },
+   {
+    "type": "qa",
+    "q": "五、什么情况用Bert模型，什么情况用LLaMA、ChatGLM类大模型，咋选？",
+    "a": "Bert 的模型由多层双向的Transformer编码器组成，由12层组成，768隐藏单元，12个head，总参数量110M，约\n1.15亿参数量。NLU（自然语言理解）任务效果很好，单卡GPU可以部署，速度快，V100GPU下1秒能处理2千\n条以上。\nChatGLM-6B, LLaMA-7B模型分别是60亿参数量和70亿参数量的大模型，基本可以处理所有NLP任务，效果好，\n但大模型部署成本高，需要大显存的GPU，并且预测速度慢，V100都需要1秒一条。\n所以建议：\n1）NLU相关的任务，用BERT模型能处理的很好，如实体识别、信息抽取、文本分类，没必要上大模型；\n2）NLG任务，纯中文任务，用ChatGLM-6B，需要处理中英文任务，用chinese-alpaca-plus-7b-hf"
+   },
+   {
+    "type": "qa",
+    "q": "六、各个专业领域是否需要各自的大模型来服务？",
+    "a": "各个专业领域通常需要各自的大模型来服务，原因如下：\n1.领域特定知识：不同领域拥有各自特定的知识和术语，需要针对该领域进行训练的大模型才能更好地理解和\n处理相关文本。例如，在医学领域，需要训练具有医学知识的大模型，以更准确地理解和生成医学文本。\n2.语言风格和惯用语：各个领域通常有自己独特的语言风格和惯用语，这些特点对于模型的训练和生成都很重\n要。专门针对某个领域进行训练的大模型可以更好地掌握该领域的语言特点，生成更符合该领域要求的文\n本。\n3.领域需求的差异：不同领域对于文本处理的需求也有所差异。例如，金融领域可能更关注数字和统计数据的\n处理，而法律领域可能更关注法律条款和案例的解析。因此，为了更好地满足不同领域的需求，需要专门针\n对各个领域进行训练的大模型。\n4.数据稀缺性：某些领域的数据可能相对较少，无法充分训练通用的大模型。针对特定领域进行训练的大模型\n可以更好地利用该领域的数据，提高模型的性能和效果。\n尽管需要各自的大模型来服务不同领域，但也可以共享一些通用的模型和技术。例如，通用的大模型可以用于处\n理通用的文本任务，而领域特定的模型可以在通用模型的基础上进行微调和定制，以适应特定领域的需求。这样\n可以在满足领域需求的同时，减少模型的重复训练和资源消耗。"
+   },
+   {
+    "type": "qa",
+    "q": "七、如何让大模型处理更长的文本？",
+    "a": "动机：目前绝大多数大模型支持的token最大长度为2048，因为序列长度直接影响Attention的计算复杂度，\n太长了会影响训练速度。\n让大模型处理更长的文本 方法\n1.LongChat\n就两步：\nstep1：将新的长度压缩到原来2048长度上，这样的好处是能复用原来的位置信息，增加长度并没有破坏position\n的权重。\n比如从2048扩展到16384，长度变为原来的8倍，那么值为10000的position_id，被压缩成10000/8=1250\n代码只需要改一行：\n# 将position_ids按比例缩一下。\nquery_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin,\nposition_ids / ratio).\n详细参考：https://kaiokendev.github.io/context\nstep2：用训练Vicuna的对话语料做微调，超过16k的文本被截断。\n1.position等比例缩放既然有用，那后续会不会有一种新的position构造的方式，无论多长都可以归一到同样的\n尺度下，只要position的相对位置保持不变就可以？其实ALiBi的方法就是一个比较简单优雅的方式，可以部\n分解决扩展长度的问题。\n2.商业模型比如ChatGPT和Claude到底是怎么做的？这个目前都没有公开。首先语料是不缺的，所以只能是结\n构上的变化。但是这两个商业模型规模都是100B这个量级的，这么大的参数，如果只增加序列长度而不做其\n他优化的话，很难训练起来。目前有证据的方法如下：\na.稀疏化，GPT3的论文中曾提到有这方面的尝试。\nb.Google的周彦祺在一次分享中透露GPT-4用了MoE的技术(猜测是100B16E)，所以应该有类似的方法\n来保证在序列变长的情况下，仍然能高效的训练模型。\nc.Multi-Query Attention。Google的PaLM，Falcon等模型都用到过，通过权重共享来提升性能。\n3.真正的出路可能还是Linear Attention，将Attention的复杂度从O(N2)降低为O(N). 比如Linear Transformer和\nRWKV。其实关于变长序列的问题，历史上现成的解决方案就是RNN，通过信息传递来解决。Transformer的\n卖点就是Attention is All your Need，丢弃了RNN，RWKV敢于把RNN拿回来，还是很有勇气，非常好的一个\n工作。现在的Attention就有点像历史上的MLP，每个节点之间都要建立关联，而MLP之后涌现了大量新的结\n构，所以Transformer是起点，后续肯定会有更合理的结构来取代它。"
+   }
+  ]
+ },
+ {
+  "topic": "RL 在 NLP 应用",
+  "source": "强化学习自然语言应用面试题",
+  "items": [
+   {
+    "type": "section",
+    "q": "一、强化学习基础面",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "1.1 介绍一下强化学习？",
+    "a": "强化学习（Reinforcement Learning）是一种时序决策学习框架，通过智能体和环境交互\n得到的奖励\n从而来优化策略 π，使其能够在环境中自主学习。"
+   },
+   {
+    "type": "qa",
+    "q": "1.2 介绍一下强化学习 的 状态（States） 和 观测（Observations）？",
+    "a": "状态（States）：对于世界状态的完整描述\n观测（Observations）：对于一个状态的部分描述，可能会缺失一些信息。当O=S时，称O为完美信息/fully\nobserved；O<S时，称O为非完美信息/partially observed。"
+   },
+   {
+    "type": "qa",
+    "q": "1.3 强化学习 有哪些 动作空间（Action Spaces），他们之间的区别是什么？",
+    "a": "离散动作空间：当智能体只能采取有限的动作，如下棋/文本生成\n连续动作空间：当智能体的动作是实数向量，如机械臂转动角度\n其区别会影响policy网络的实现方式。"
+   },
+   {
+    "type": "qa",
+    "q": "1.4 强化学习 有哪些 Policy策略？",
+    "a": "确定性策略Deterministic Policy： at = u(st)，连续动作空间\n随机性策略Stochastic Policy： at ~ π(·|st) ，离散动作空间"
+   },
+   {
+    "type": "qa",
+    "q": "1.5 介绍一下 强化学习 的 轨迹？",
+    "a": "轨迹：指的是状态和行动的序列\n1.状态转换函数（transition function）：\n1.初始状态是从初始状态分布中采样的，一般表示为"
+   },
+   {
+    "type": "qa",
+    "q": "1.6 介绍一下 强化学习 的 奖赏函数？",
+    "a": "智能体的目标是最大化行动轨迹的累计奖励："
+   },
+   {
+    "type": "qa",
+    "q": "1.7 介绍一下 强化学习问题？",
+    "a": "核心问题：选择一种策略从而最大化预期收益\n1.假设环境转换和策略都是随机的，则T步行动轨迹概率：\n1.预期收益：\n1.核心优化问题：找到最优策略"
+   },
+   {
+    "type": "section",
+    "q": "二、RL发展路径（至PPO）",
+    "a": ""
+   },
+   {
+    "type": "qa",
+    "q": "2.1 介绍一下 强化学习 中 优化方法 Value-based？",
+    "a": "value-based：状态的值 V(s) 或者 状态行动对(state-action pair) 的值Q(s,a) ，作为一种累积奖赏的估计，可\n以通过最大化值函数来优化得到最优策略\n1.最优值函数（Optimal Value Function）：\n1.最优动作-值函数（Optimal Action-Value Function）：\n最优动作：\n1.两者的关系："
+   },
+   {
+    "type": "qa",
+    "q": "2.2 介绍一下 强化学习 中 贝尔曼方程？",
+    "a": "中心思想：当前值估计=当前奖赏+未来值估计\n所以，最优值函数的贝尔曼公式为："
+   },
+   {
+    "type": "qa",
+    "q": "2.3 介绍一下 强化学习 中 优势函数Advantage Functions？",
+    "a": "强化学习中，有时不需要知道一个行动的绝对好坏，而只需要知道它相对于其他action的相对优势。即"
+   }
+  ]
+ }
+];
+</script>
+<script>
+/* LLM 面试题学习工作台 - app logic */
+const LS_KEY = "llm-workshop-progress-v1";
+const state = {
+  view: "dashboard",       // dashboard | topic | quiz | search
+  topic: 0,
+  topicMode: "browse",     // browse | selftest
+  topicFilter: "all",      // all | unlearned | review | mastered
+  quizScope: "all",        // all | topic
+  search: "",
+  quiz: null,              // {t, i}
+  openCards: {},           // "t-i" -> "open" | "revealed"
+};
+
+/* ---------- icons ---------- */
+function icon(name){
+  const paths = {
+    check: '<path d="M3.5 8.5l3 3 6-7"/>',
+    refresh: '<path d="M13.5 8A5.5 5.5 0 1 1 12 3.5"/><path d="M12 1.5v3h3"/>',
+    x: '<path d="M4 4l8 8M12 4l-8 8"/>',
+    arrow: '<path d="M3 8h10M9 4l4 4-4 4"/>',
+    dice: '<rect x="2.5" y="2.5" width="11" height="11" rx="2.5"/><circle cx="5.5" cy="5.5" r=".9"/><circle cx="10.5" cy="10.5" r=".9"/><circle cx="10.5" cy="5.5" r=".9"/><circle cx="5.5" cy="10.5" r=".9"/>',
+  };
+  return '<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths[name] + '</svg>';
+}
+
+/* ---------- progress ---------- */
+const VALID_STATUS = new Set(["new", "mastered", "review"]);
+function loadItems(){
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return {};
+    const p = JSON.parse(raw);
+    if (p && typeof p === "object" && p.v === 2 && p.items && typeof p.items === "object") return p.items;
+    if (p && typeof p === "object" && !Array.isArray(p)) return p; // legacy flat map
+    return {};
+  } catch(e){ return {}; }
+}
+function saveItems(items){
+  localStorage.setItem(LS_KEY, JSON.stringify({ v: 2, savedAt: Date.now(), items }));
+  renderSaveInfo();
+}
+function statusOf(t, i){ const v = loadItems()[`${t}-${i}`]; return VALID_STATUS.has(v) ? v : "new"; }
+function setStatus(t, i, s){
+  const p = loadItems();
+  if (s === "new") delete p[`${t}-${i}`]; else p[`${t}-${i}`] = s;
+  saveItems(p);
+  render();
+}
+function renderProgressPanel(){
+  const st = overallStats();
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set("ppOk", st.ok);
+  set("ppRev", st.review);
+  set("ppNew", st.total - st.ok - st.review);
+  const bar = document.getElementById("ppBar");
+  if (bar) bar.style.transform = "scaleX(" + (st.pct / 100) + ")";
+  renderSaveInfo();
+}
+function renderSaveInfo(){
+  const el = document.getElementById("saveInfo");
+  if (!el) return;
+  let ts = "";
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw){
+      const p = JSON.parse(raw);
+      if (p && p.savedAt){
+        const d = new Date(p.savedAt);
+        ts = "已保存 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+      }
+    }
+  } catch(e){}
+  el.textContent = ts || "尚未保存";
+}
+function topicStats(t){
+  const p = loadItems();
+  let total = 0, ok = 0, review = 0;
+  DATA[t].items.forEach((it, i) => {
+    if (it.type !== "qa") return;
+    total++;
+    if (p[`${t}-${i}`] === "mastered") ok++;
+    if (p[`${t}-${i}`] === "review") review++;
+  });
+  return { total, ok, review, pct: total ? Math.round(ok / total * 100) : 0 };
+}
+function overallStats(){
+  const p = loadItems();
+  let total = 0, ok = 0, review = 0;
+  DATA.forEach((tpc, t) => tpc.items.forEach((it, i) => {
+    if (it.type !== "qa") return;
+    total++;
+    if (p[`${t}-${i}`] === "mastered") ok++;
+    if (p[`${t}-${i}`] === "review") review++;
+  }));
+  return { total, ok, review, pct: total ? Math.round(ok / total * 100) : 0 };
+}
+
+/* ---------- nav ---------- */
+function renderNav(){
+  const nav = document.getElementById("nav");
+  const items = [];
+  items.push(`<a href="#" class="${state.view==='dashboard'?'active':''}" data-t="-1">
+    <span class="idx">◎</span>总览<span class="pct">${overallStats().pct}%</span></a>`);
+  DATA.forEach((tpc, t) => {
+    const st = topicStats(t);
+    const cls = (state.view === "topic" && state.topic === t) ? "active" : "";
+    items.push(`<a href="#" class="${cls}" data-t="${t}">
+      <span class="idx">${String(t+1).padStart(2,"0")}</span>${tpc.topic}<span class="pct">${st.pct}%</span></a>`);
+  });
+  nav.innerHTML = items.join("");
+  nav.querySelectorAll("a").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    const t = Number(a.dataset.t);
+    if (t === -1) goDashboard(); else goTopic(t);
+    closeNav();
+  }));
+}
+
+/* ---------- views ---------- */
+function goDashboard(){ state.view = "dashboard"; state.search = ""; document.getElementById("searchInput").value=""; render(); }
+function goTopic(t){ state.view = "topic"; state.topic = t; render(); window.scrollTo(0,0); }
+function goQuiz(scope){ state.view = "quiz"; state.quizScope = scope; pickQuiz(); render(); }
+function goSearch(q){ state.view = "search"; state.search = q; render(); }
+
+function render(){
+  renderNav();
+  renderProgressPanel();
+  document.getElementById("crumb").innerHTML = crumbHTML();
+  const v = document.getElementById("view");
+  if (state.view === "dashboard") v.innerHTML = dashboardHTML();
+  else if (state.view === "topic") v.innerHTML = topicHTML();
+  else if (state.view === "quiz") v.innerHTML = quizHTML();
+  else v.innerHTML = searchHTML();
+  bindView();
+}
+
+function crumbHTML(){
+  if (state.view === "dashboard") return `<button onclick="goDashboard()">总览</button>`;
+  if (state.view === "topic") return `<button onclick="goDashboard()">总览</button> <span>/</span> <b>${esc(DATA[state.topic].topic)}</b>`;
+  if (state.view === "quiz") return `<button onclick="goDashboard()">总览</button> <span>/</span> <b>抽题练习</b>`;
+  return `<button onclick="goDashboard()">总览</button> <span>/</span> <b>搜索</b>`;
+}
+
+/* ---------- dashboard ---------- */
+function dashboardHTML(){
+  const st = overallStats();
+  const reviewCards = collectReview();
+  const today = pickRandomUnlearned();
+  let todayHTML = "";
+  if (today){
+    todayHTML = `<div class="today">
+      <div class="tag">今日推荐</div>
+      <div class="q">${esc(short(today.q, 90))}</div>
+      <button onclick="goTopic(${today.t})">去练习 ${icon("arrow")}</button>
+    </div>`;
+  }
+  let reviewHTML = "";
+  if (reviewCards.length){
+    reviewHTML = `<div class="section-title"><h3>待复习</h3><span class="note">${reviewCards.length} 题</span></div>
+    <div class="qa-list">${reviewCards.map(c => miniCard(c)).join("")}</div>`;
+  }
+  const cards = DATA.map((tpc, t) => {
+    const s = topicStats(t);
+    const done = s.ok === s.total && s.total > 0;
+    return `<button class="tcard ${done?'done':''}" onclick="goTopic(${t})">
+      <div class="t-title">${esc(tpc.topic)}<small>${String(t+1).padStart(2,"0")} · ${s.total} 题</small></div>
+      <div class="t-meta"><span>掌握 <b>${s.ok}</b> / ${s.total}</span><span>待复习 <b>${s.review}</b></span></div>
+      <div class="barwrap"><div class="bar" style="transform:scaleX(${s.pct/100})"></div></div>
+      <div class="go">${done ? "已全部掌握" : "进入学习"} ${icon("arrow")}</div>
+    </button>`;
+  }).join("");
+  return `
+    <div class="hero">
+      <h2>把 12 份面试题变成你的知识库</h2>
+      <p>共 ${st.total} 道题，覆盖 Attention、RLHF/PPO、损失函数、层归一化、负样本挖掘、SFT 数据生成等主题。建议先用「自测模式」过一遍，再针对薄弱点复习。</p>
+      <div class="stats">
+        <div class="stat ok"><div class="num">${st.ok}<small> / ${st.total}</small></div><div class="lbl">已掌握</div></div>
+        <div class="stat warn"><div class="num">${st.review}</div><div class="lbl">需复习</div></div>
+        <div class="stat"><div class="num">${st.total - st.ok - st.review}</div><div class="lbl">未开始</div></div>
+        <div class="stat"><div class="num">${DATA.length}</div><div class="lbl">主题</div></div>
+      </div>
+      <div class="barwrap"><div class="bar" style="transform:scaleX(${st.pct/100})"></div></div>
+    </div>
+    ${todayHTML}
+    <div class="section-title"><h3>全部主题</h3><span class="note">点击进入学习</span></div>
+    <div class="grid">${cards}</div>
+    ${reviewHTML}
+  `;
+}
+function collectReview(){
+  const out = [];
+  DATA.forEach((tpc, t) => tpc.items.forEach((it, i) => {
+    if (it.type === "qa" && statusOf(t, i) === "review") out.push({ t, i, q: it.q, topic: tpc.topic });
+  }));
+  return out;
+}
+function pickRandomUnlearned(){
+  const pool = [];
+  DATA.forEach((tpc, t) => tpc.items.forEach((it, i) => {
+    if (it.type === "qa" && statusOf(t, i) === "new") pool.push({ t, i, q: it.q });
+  }));
+  if (!pool.length) return null;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+function miniCard(c){
+  return `<div class="card open">
+    <button type="button" class="qrow" onclick="goTopic(${c.t})">
+      <span class="num">${String(c.i+1).padStart(2,"0")}</span>
+      <div class="qtext">${esc(short(c.q, 80))}</div>
+      <span class="status-dot" style="background:var(--warn)"></span>
+    </button>
+    <div class="afoot" style="display:flex;padding-bottom:16px">
+      <span class="pill warn">${esc(c.topic)}</span>
+      <button class="on-ok" onclick="event.stopPropagation();setStatus(${c.t},${c.i},'mastered')">${icon("check")}已掌握</button>
+      <button onclick="event.stopPropagation();setStatus(${c.t},${c.i},'new')">${icon("x")}取消标记</button>
+    </div></div>`;
+}
+
+/* ---------- topic ---------- */
+function visibleItems(t){
+  const filter = state.topicFilter;
+  const items = [];
+  DATA[t].items.forEach((it, i) => {
+    if (it.type === "qa"){
+      const s = statusOf(t, i);
+      if (filter === "unlearned" && s !== "new") return;
+      if (filter === "review" && s !== "review") return;
+      if (filter === "mastered" && s !== "mastered") return;
+      items.push({ idx: i, it });
+    } else {
+      items.push({ idx: -1, it });
+    }
+  });
+  return items;
+}
+function topicHTML(){
+  const t = state.topic;
+  const tpc = DATA[t];
+  const st = topicStats(t);
+  const mode = state.topicMode;
+  const items = visibleItems(t);
+  const list = items.map(({idx, it}) => {
+    if (it.type === "section") return `<div class="sec-div"><span>${esc(it.q)}</span></div>`;
+    return cardHTML(t, idx, it, mode);
+  }).join("");
+  return `
+    <div class="thead">
+      <h2>${esc(tpc.topic)}</h2>
+      <div class="meta">
+        <span class="pill acc">共 ${st.total} 题</span>
+        <span class="pill ok">掌握 ${st.ok}</span>
+        <span class="pill warn">待复习 ${st.review}</span>
+        <span class="pill">进度 ${st.pct}%</span>
+      </div>
+    </div>
+    <div class="modebar">
+      <div class="seg">
+        <button class="${mode==='browse'?'on':''}" data-mode="browse">浏览模式</button>
+        <button class="${mode==='selftest'?'acc-on':''}" data-mode="selftest">自测模式</button>
+      </div>
+      <button class="pill acc" style="font-weight:600" data-act="quiz">${icon("dice")}抽一题</button>
+      <div class="chips" data-chips>
+        <button class="${state.topicFilter==='all'?'on':''}" data-f="all">全部</button>
+        <button class="${state.topicFilter==='unlearned'?'on':''}" data-f="unlearned">未学</button>
+        <button class="${state.topicFilter==='review'?'on':''}" data-f="review">需复习</button>
+        <button class="${state.topicFilter==='mastered'?'on':''}" data-f="mastered">已掌握</button>
+      </div>
+    </div>
+    ${items.length ? `<div class="qa-list">${list}</div>` : `<div class="empty"><div class="big">这个筛选项下没有题目</div>换个筛选条件看看</div>`}
+    <div class="section-title"><span class="note">原文档：${esc(tpc.source)}.pdf · 公式为图片的题目请对照原 PDF</span></div>
+  `;
+}
+function cardHTML(t, i, it, mode){
+  const s = statusOf(t, i);
+  const stCls = s === "mastered" ? "st-mastered" : (s === "review" ? "st-review" : "");
+  const hasA = it.a && it.a.trim().length > 0;
+  const answer = hasA ? esc(it.a) : `<span class="hint">（原文中该题为公式/代码图，请对照原 PDF 自查）</span>`;
+  const qm = mode === "selftest" ? "quizmode" : "";
+  const openState = state.openCards[`${t}-${i}`];
+  const openCls = qm === "quizmode" ? (openState === "revealed" ? "revealed" : "") : (openState === "open" ? "open" : "");
+  const expanded = openCls !== "";
+  return `<div class="card ${stCls} ${qm} ${openCls}" id="qa-${t}-${i}" data-t="${t}" data-i="${i}">
+    <button type="button" class="qrow" data-act="toggle" aria-expanded="${expanded}">
+      <span class="num">${String(i+1).padStart(2,"0")}</span>
+      <div class="qtext">${esc(it.q)}</div>
+      <span class="status-dot"></span>
+    </button>
+    <div class="a">${answer}</div>
+    <div class="afoot">
+      <button data-act="ok" class="${s==='mastered'?'on-ok':''}">${icon("check")}已掌握</button>
+      <button data-act="review" class="${s==='review'?'on-warn':''}">${icon("refresh")}需复习</button>
+      <button data-act="new">${icon("x")}重置为未学</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- quiz ---------- */
+function pickQuiz(){
+  let pool = [];
+  if (state.quizScope === "topic"){
+    DATA[state.topic].items.forEach((it, i) => { if (it.type === "qa") pool.push({ t: state.topic, i }); });
+  } else {
+    DATA.forEach((tpc, t) => tpc.items.forEach((it, i) => { if (it.type === "qa") pool.push({ t, i }); }));
+  }
+  if (!pool.length){ state.quiz = null; return; }
+  // prefer unlearned/review, fall back to any
+  const weaker = pool.filter(x => statusOf(x.t, x.i) !== "mastered");
+  const src = weaker.length ? weaker : pool;
+  state.quiz = src[Math.floor(Math.random() * src.length)];
+}
+function quizHTML(){
+  if (!state.quiz){ return `<div class="empty"><div class="big">没有可抽的题目</div></div>`; }
+  const { t, i } = state.quiz;
+  const it = DATA[t].items[i];
+  const hasA = it.a && it.a.trim().length > 0;
+  const answer = hasA ? esc(it.a) : `<span class="hint">（原文中该题为公式/代码图，请对照原 PDF 自查）</span>`;
+  return `
+    <div class="modebar">
+      <div class="seg">
+        <button class="${state.quizScope==='all'?'on':''}" data-scope="all">全部主题</button>
+        <button class="${state.quizScope==='topic'?'on':''}" data-scope="topic">仅「${esc(DATA[state.topic].topic)}」</button>
+      </div>
+      <div class="chips"><button onclick="goDashboard()">${icon("arrow")}返回总览</button></div>
+    </div>
+    <div class="quiz-stage" id="quizStage">
+      <div class="q-topic">${esc(DATA[t].topic)} · 第 ${i+1} 题</div>
+      <div class="q-big">${esc(it.q)}</div>
+      <div class="a-big">${answer}</div>
+      <div class="quiz-actions" id="quizActions">
+        <button class="primary" data-act="reveal">显示答案</button>
+        <button class="ghost" data-act="skip">换一题</button>
+      </div>
+    </div>
+  `;
+}
+function revealQuiz(){
+  const stage = document.getElementById("quizStage");
+  stage.classList.add("revealed");
+  document.getElementById("quizActions").innerHTML = `
+    <button class="okbtn" data-act="know">${icon("check")}会了 · 已掌握</button>
+    <button class="nobtn" data-act="notknow">${icon("refresh")}不会 · 需复习</button>
+    <button class="ghost" data-act="next">下一题</button>
+  `;
+  bindView();
+}
+
+/* ---------- search ---------- */
+function searchHTML(){
+  const q = state.search.trim();
+  if (!q) return `<div class="empty"><div class="big">输入关键词开始搜索</div>支持搜索题目和答案内容，按 / 快速聚焦搜索框</div>`;
+  const groups = [];
+  const re = new RegExp(escRe(q), "gi");
+  DATA.forEach((tpc, t) => {
+    const hits = [];
+    tpc.items.forEach((it, i) => {
+      if (it.type !== "qa") return;
+      const inQ = it.q.includes(q) || it.q.toLowerCase().includes(q.toLowerCase());
+      const inA = it.a.includes(q) || it.a.toLowerCase().includes(q.toLowerCase());
+      if (!inQ && !inA) return;
+      hits.push(`<div class="card open" onclick="goTopic(${t})">
+        <button type="button" class="qrow"><span class="num">${String(i+1).padStart(2,"0")}</span>
+        <div class="qtext">${inQ ? hl(it.q, re) : esc(short(it.q, 100))}</div>
+        <span class="status-dot"></span></button>
+        ${inA ? `<div class="a">…${hl(snippet(it.a, q), re)}…</div>` : ""}
+      </div>`);
+    });
+    if (hits.length) groups.push(`<div class="res-group">
+      <div class="g-title"><b>${esc(tpc.topic)}</b> · ${hits.length} 条匹配</div>
+      <div class="qa-list">${hits.join("")}</div></div>`);
+  });
+  const body = groups.length ? groups.join("") : `<div class="empty"><div class="big">没有找到「${esc(q)}」相关内容</div>试试其他关键词</div>`;
+  return `<div class="section-title"><h3>搜索结果</h3><span class="note">${groups.length ? "共 " + groups.length + " 个主题命中" : ""}</span></div>${body}`;
+}
+function snippet(a, q){
+  const idx = a.indexOf(q);
+  if (idx < 0) return a.slice(0, 140);
+  const s = Math.max(0, idx - 60);
+  return a.slice(s, s + 160);
+}
+
+/* ---------- events ---------- */
+function bindView(){
+  if (state.view === "topic"){
+    document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
+      state.topicMode = b.dataset.mode; render();
+    }));
+    document.querySelectorAll("[data-f]").forEach(b => b.addEventListener("click", () => {
+      state.topicFilter = b.dataset.f; render();
+    }));
+    document.querySelectorAll("[data-act='quiz']").forEach(b => b.addEventListener("click", () => goQuiz("topic")));
+    document.querySelectorAll(".card").forEach(card => {
+      const t = Number(card.dataset.t), i = Number(card.dataset.i);
+      card.querySelectorAll("[data-act='toggle']").forEach(el => el.addEventListener("click", () => {
+        if (state.topicMode === "selftest"){
+          card.classList.toggle("revealed");
+          state.openCards[`${t}-${i}`] = card.classList.contains("revealed") ? "revealed" : "";
+        } else {
+          card.classList.toggle("open");
+          state.openCards[`${t}-${i}`] = card.classList.contains("open") ? "open" : "";
+        }
+        const openNow = card.classList.contains("open") || card.classList.contains("revealed");
+        el.setAttribute("aria-expanded", String(openNow));
+      }));
+      card.querySelectorAll("[data-act='ok']").forEach(el => el.addEventListener("click", e => { e.stopPropagation(); setStatus(t, i, "mastered"); }));
+      card.querySelectorAll("[data-act='review']").forEach(el => el.addEventListener("click", e => { e.stopPropagation(); setStatus(t, i, "review"); }));
+      card.querySelectorAll("[data-act='new']").forEach(el => el.addEventListener("click", e => { e.stopPropagation(); setStatus(t, i, "new"); }));
+    });
+  }
+  if (state.view === "quiz"){
+    document.querySelectorAll("[data-scope]").forEach(b => b.addEventListener("click", () => {
+      state.quizScope = b.dataset.scope; goQuiz(state.quizScope);
+    }));
+    document.querySelectorAll("[data-act='reveal']").forEach(b => b.addEventListener("click", revealQuiz));
+    document.querySelectorAll("[data-act='skip']").forEach(b => b.addEventListener("click", () => pickQuiz() && render()));
+    document.querySelectorAll("[data-act='next']").forEach(b => b.addEventListener("click", () => pickQuiz() && render()));
+    document.querySelectorAll("[data-act='know']").forEach(b => b.addEventListener("click", () => {
+      const {t, i} = state.quiz; setStatus(t, i, "mastered"); pickQuiz(); render();
+    }));
+    document.querySelectorAll("[data-act='notknow']").forEach(b => b.addEventListener("click", () => {
+      const {t, i} = state.quiz; setStatus(t, i, "review"); pickQuiz(); render();
+    }));
+  }
+}
+
+/* ---------- progress io ---------- */
+function exportProgress(){
+  const items = loadItems();
+  const blob = new Blob([JSON.stringify({ v: 2, savedAt: Date.now(), items }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "面试工作台-学习进度-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("进度已导出（" + Object.keys(items).length + " 条）");
+}
+function importProgress(ev){
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const p = JSON.parse(r.result);
+      let items = null;
+      if (p && typeof p === "object" && p.v === 2 && p.items && typeof p.items === "object") items = p.items;
+      else if (p && typeof p === "object" && !Array.isArray(p)) items = p;
+      if (!items) throw new Error("bad shape");
+      const clean = {};
+      for (const k of Object.keys(items)){
+        if (VALID_STATUS.has(items[k])) clean[k] = items[k];
+      }
+      const cur = loadItems();
+      let n = 0;
+      for (const k of Object.keys(clean)){
+        if (cur[k] !== clean[k]){ cur[k] = clean[k]; n++; }
+      }
+      saveItems(cur);
+      toast(n ? "已导入 " + n + " 条进度（与现有进度合并）" : "文件有效，但没有新的进度变化");
+      render();
+    } catch(e){ toast("导入失败：文件格式不对"); }
+    ev.target.value = "";
+  };
+  r.readAsText(f);
+}
+function resetProgress(){
+  if (confirm("确定清空全部学习进度？此操作不可撤销。")){
+    localStorage.removeItem(LS_KEY);
+    toast("进度已重置");
+    render();
+  }
+}
+
+/* ---------- utils ---------- */
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function escRe(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+function hl(s, re){ return esc(s).replace(re, m => `<span class="hl">${m}</span>`); }
+function short(s, n){ s = String(s); return s.length > n ? s.slice(0, n) + "…" : s; }
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove("show"), 2200);
+}
+function toggleNav(){ document.getElementById("sidebar").classList.toggle("open"); document.getElementById("scrim").classList.toggle("show"); }
+function closeNav(){ document.getElementById("sidebar").classList.remove("open"); document.getElementById("scrim").classList.remove("show"); }
+function onSearchInput(v){ if (state.view !== "search" && v.trim()) goSearch(v.trim()); else if (!v.trim() && state.view === "search") goDashboard(); else if (state.view === "search") goSearch(v.trim()); }
+
+window.addEventListener("storage", e => { if (e.key === LS_KEY) render(); });
+
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && document.activeElement.tagName !== "INPUT"){
+    e.preventDefault();
+    document.getElementById("searchInput").focus();
+  }
+});
+
+render();
+
+</script>
+</body>
+</html>
