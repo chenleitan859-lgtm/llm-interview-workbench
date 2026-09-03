@@ -1,0 +1,7 @@
+# 只保留工作台相关文件，其余一律不进入仓库
+/*
+!/.gitignore
+!/deploy/
+!/workbench_src/
+!/qa_data.json
+!/LLM面试题学习工作台.html
